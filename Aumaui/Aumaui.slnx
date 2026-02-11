@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="PROMPT.md" />
+  </Folder>
+  <Project Path="../AumauiCL/AumauiCL.csproj" />
+  <Project Path="Aumaui.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+</Solution>

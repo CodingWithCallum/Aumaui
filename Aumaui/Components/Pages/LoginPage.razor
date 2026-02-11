@@ -1,0 +1,84 @@
+@page "/"
+@page "/login"
+@using AumauiCL.ViewModels
+@using Microsoft.AspNetCore.Components.Forms
+@inject LoginViewModel ViewModel
+@inject NavigationManager Navigation
+
+<FluentCard Width="400px" Style="margin: 20px auto; padding: 20px;">
+    <h3>Login</h3>
+
+    @if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
+    {
+        <FluentMessageBar Title="Error" Intent="@MessageIntent.Error">
+            @ViewModel.ErrorMessage
+        </FluentMessageBar>
+    }
+
+    <EditForm Model="@ViewModel" OnValidSubmit="@HandleStandardLogin">
+        <DataAnnotationsValidator />
+        
+        <FluentTextField @bind-Value="@ViewModel.CompanyCode" Label="Company Code" Required="true" Placeholder="Enter Company Code" Style="width: 100%; margin-bottom: 15px;" />
+        <ValidationMessage For="@(() => ViewModel.CompanyCode)" />
+
+        <FluentButton Appearance="@Appearance.Accent" OnClick="@HandleMicrosoftLogin" Style="width: 100%; margin-bottom: 20px;" Disabled="@(!ViewModel.CanLogin || ViewModel.IsBusy)">
+            @if (ViewModel.IsBusy)
+            {
+                <FluentProgressRing Style="width: 20px; height: 20px;" />
+            }
+            else
+            {
+                <span>Sign in with Microsoft</span>
+            }
+        </FluentButton>
+
+        <FluentAccordion>
+            <FluentAccordionItem Heading="Standard Login">
+                <FluentTextField @bind-Value="@ViewModel.Email" Label="Email" Required="true" Placeholder="Enter Email" Style="width: 100%; margin-bottom: 10px;" />
+                <ValidationMessage For="@(() => ViewModel.Email)" />
+
+                <FluentTextField @bind-Value="@ViewModel.Password" Label="Password" Required="true" TextFieldType="@TextFieldType.Password" Placeholder="Enter Password" Style="width: 100%; margin-bottom: 15px;" />
+                <ValidationMessage For="@(() => ViewModel.Password)" />
+
+                 <FluentButton Type="@ButtonType.Submit" Appearance="@Appearance.Neutral" Style="width: 100%;" Disabled="@ViewModel.IsBusy">
+                    Login
+                </FluentButton>
+            </FluentAccordionItem>
+        </FluentAccordion>
+    </EditForm>
+</FluentCard>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += OnPropertyChanged;
+    }
+
+    private void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    private async Task HandleMicrosoftLogin()
+    {
+        await ViewModel.LoginWithMicrosoftCommand.ExecuteAsync(null);
+        if (!ViewModel.HasErrors && string.IsNullOrEmpty(ViewModel.ErrorMessage))
+        {
+             Navigation.NavigateTo("/sync");
+        }
+    }
+
+    private async Task HandleStandardLogin()
+    {
+        await ViewModel.LoginWithStandardCommand.ExecuteAsync(null);
+         if (!ViewModel.HasErrors && string.IsNullOrEmpty(ViewModel.ErrorMessage))
+        {
+             Navigation.NavigateTo("/sync");
+        }
+    }
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnPropertyChanged;
+    }
+}

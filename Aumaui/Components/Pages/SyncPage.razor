@@ -1,0 +1,49 @@
+@page "/sync"
+@using AumauiCL.Interfaces
+@inject ISyncService SyncService
+@inject NavigationManager Navigation
+@using Microsoft.FluentUI.AspNetCore.Components
+
+@implements IDisposable
+@using System.ComponentModel
+
+<FluentLayout Style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+    <FluentProgressRing Value="@((int)SyncService.SyncProgress)" Width="50px" Height="50px" />
+    <br />
+    <FluentLabel Typo="@Typography.H4">@SyncService.SyncStatus</FluentLabel>
+    <br />
+    <FluentProgress Min="0" Max="100" Value="@((int)SyncService.SyncProgress)" Width="300px" />
+</FluentLayout>
+
+@code {
+    private PropertyChangedEventHandler? _propertyChangedHandler;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to property changes to trigger UI updates
+        _propertyChangedHandler = async (sender, args) =>
+        {
+            await InvokeAsync(StateHasChanged);
+            
+            if (args.PropertyName == nameof(SyncService.SyncProgress) && SyncService.SyncProgress >= 100)
+            {
+                // Small delay to show 100% completion before navigating
+                await Task.Delay(500);
+                Navigation.NavigateTo("/dashboard");
+            }
+        };
+
+        SyncService.PropertyChanged += _propertyChangedHandler;
+
+        // Start the sync process
+        await SyncService.ExecuteSyncAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_propertyChangedHandler is not null)
+        {
+            SyncService.PropertyChanged -= _propertyChangedHandler;
+        }
+    }
+}
