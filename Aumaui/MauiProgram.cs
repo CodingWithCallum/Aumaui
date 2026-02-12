@@ -34,6 +34,9 @@ namespace Aumaui
             // Register Blazor Hybrid & Developer Tools
             builder.Services.AddMauiBlazorWebView();
 
+            // HTTP Client
+            builder.Services.AddHttpClient();
+
             // Services
             builder.Services.AddSingleton<DatabaseService>();
             builder.Services.AddSingleton<MockApiService>(); // Register MockApi for now

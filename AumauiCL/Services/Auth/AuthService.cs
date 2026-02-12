@@ -11,16 +11,18 @@ namespace AumauiCL.Services.Auth
     {
         private readonly DatabaseService _databaseService;
         private readonly ISyncService _syncService;
+        private readonly HttpClient _httpClient;
 
         // MSAL Configuration
         private const string ClientId = "YOUR_CLIENT_ID_HERE"; // Placeholder
         private const string RedirectUri = "msauth://com.companyname.aumaui"; // Placeholder
         private string[] Scopes = new string[] { "User.Read" };
 
-        public AuthService(DatabaseService databaseService, ISyncService syncService)
+        public AuthService(DatabaseService databaseService, ISyncService syncService, HttpClient httpClient)
         {
             _databaseService = databaseService;
             _syncService = syncService;
+            _httpClient = httpClient;
         }
 
         public async Task<UserModel?> GetCurrentUserAsync()
@@ -93,20 +95,41 @@ namespace AumauiCL.Services.Auth
 
         public async Task<UserModel> LoginWithStandardAsync(string companyCode, string email, string password)
         {
-            // MOCK Standard Login
-            await Task.Delay(500);
-
-            if (password == "password")
+            // Prepare the login request payload
+            var loginRequest = new
             {
+                CompanyCode = companyCode,
+                Email = email,
+                Password = password
+            };
+
+            try
+            {
+                // TODO: Replace with actual API endpoint when available
+                // var response = await _httpClient.PostAsJsonAsync("https://api.aumaui.com/auth/login", loginRequest);
+                // response.EnsureSuccessStatusCode();
+                // var result = await response.Content.ReadFromJsonAsync<LoginResult>();
+
+                // SIMULATE A SUCCESSFUL API CALL
+                await Task.Delay(1000); // Simulate network latency
+
+                // Mock validation (server-side simulation)
+                // In a real scenario, the API would return 401 if credentials were invalid.
+                // For now, we allow any non-empty input to succeed unless specific "error" triggers are used for testing.
+                if (email.ToLower().Contains("error"))
+                {
+                    throw new HttpRequestException("Invalid credentials (simulated API error)", null, System.Net.HttpStatusCode.Unauthorized);
+                }
+
                 var user = new UserModel
                 {
                     Email = email,
                     Name = email.Split('@')[0],
                     CompanyCode = companyCode,
-                    Company = "Standard Co.",
+                    Company = "Standard Co.", // This would come from the API response
                     // Required fields
                     MicrosoftId = "N/A",
-                    ExternalId = Guid.NewGuid().ToString(),
+                    ExternalId = Guid.NewGuid().ToString(), // This would come from the API response
                     UserName = email
                 };
 
@@ -117,8 +140,11 @@ namespace AumauiCL.Services.Auth
 
                 return user;
             }
-
-            throw new UnauthorizedAccessException("Invalid credentials");
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Standard Login Failed: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task LogoutAsync()
