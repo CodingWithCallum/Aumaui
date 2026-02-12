@@ -21,12 +21,10 @@ public partial class LoginViewModel : ObservableValidator
     private string _companyCode = string.Empty;
 
     [ObservableProperty]
-    [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid Email Address")]
     private string _email = string.Empty;
 
     [ObservableProperty]
-    [Required(ErrorMessage = "Password is required")]
     private string _password = string.Empty;
 
     [ObservableProperty]
@@ -50,8 +48,9 @@ public partial class LoginViewModel : ObservableValidator
             return;
         }
 
-        ValidateAllProperties();
-        if (HasErrors) return;
+
+        // ValidateAllProperties(); // Removed to prevent blocking by Standard login fields
+        // if (HasErrors) return;   // Relying on manual validation for this flow
 
         IsBusy = true;
         ErrorMessage = string.Empty;
