@@ -82,13 +82,15 @@
 
 /* Xsys (Now Primary) */
 .btn-xsys {
-    background-color: var(--login-primary);
-    color: white;
+    background-color: #0078d4 !important;
+    /* Force Blue */
+    color: white !important;
     box-shadow: 0 4px 6px rgba(0, 120, 212, 0.2);
 }
 
 .btn-xsys:hover {
-    background-color: #005a9e;
+    background-color: #005a9e !important;
+    /* Darker Blue */
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 120, 212, 0.3);
 }

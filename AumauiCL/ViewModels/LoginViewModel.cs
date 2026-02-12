@@ -77,9 +77,9 @@ public partial class LoginViewModel : ObservableValidator
         if (IsBusy) return;
 
         // Manual validation for standard login fields
-        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(CompanyCode))
         {
-            ErrorMessage = "Email and Password are required.";
+            ErrorMessage = "Company Code, Email, and Password are required.";
             return;
         }
 
