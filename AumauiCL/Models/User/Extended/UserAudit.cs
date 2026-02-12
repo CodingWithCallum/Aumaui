@@ -1,7 +1,7 @@
 using SQLite;
 using Annotation = System.ComponentModel.DataAnnotations;
 
-namespace Client_MAUI_CL.Models.TestingFolder.User.Extended
+namespace AumauiCL.Models.User.Extended
 {
     public class UserAudit
     {

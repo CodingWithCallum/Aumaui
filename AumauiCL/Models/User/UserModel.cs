@@ -1,13 +1,13 @@
-using Client_MAUI_CL.Models.TestingFolder.User.Core;
-using Client_MAUI_CL.Models.TestingFolder.User.Extended;
-using Client_MAUI_CL.Models.TestingFoler.User.Core;
+﻿using AumauiCL.Models.User.Core;
+using AumauiCL.Models.User.Extended;
+using AumauiCL.Models.User.Core;
 using SQLite;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.CompilerServices;
 using Annotations = System.ComponentModel.DataAnnotations;
 
-namespace Client_MAUI_CL.Models.TestingFolder.User
+namespace AumauiCL.Models.User
 {
     [Table("Users")]
     public class UserModel : INotifyPropertyChanged

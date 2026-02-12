@@ -1,6 +1,6 @@
 using SQLite;
 
-namespace Client_MAUI_CL.Models.TestingFolder.User.Core
+namespace AumauiCL.Models.User.Core
 {
     public class UserAccountStatus
     {

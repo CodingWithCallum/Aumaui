@@ -1,7 +1,7 @@
 using SQLite;
 using Annotation = System.ComponentModel.DataAnnotations;
 
-namespace Client_MAUI_CL.Models.TestingFolder.User.Core
+namespace AumauiCL.Models.User.Core
 {
     public class UserOrganization
     {

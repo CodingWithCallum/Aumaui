@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AumauiCL.Models.TestingFolder.User.Core
+namespace AumauiCL.Models.User.Core
 {
     public class UserIdentity
     {
