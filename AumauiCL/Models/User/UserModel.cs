@@ -1,16 +1,19 @@
-﻿using AumauiCL.Models.User.Core;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using AumauiCL.Interfaces;
+using AumauiCL.Models.Core;
+using AumauiCL.Models.User.Core;
 using AumauiCL.Models.User.Extended;
 using SQLite;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using Annotations = System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User
 {
     [SQLite.Table("Users")]
-    public class UserModel : INotifyPropertyChanged
+    public class UserModel : BaseAggregate, IEntity, ISyncable
     {
         #region Private Fields
+        private int _id; // Backing field for ID
         private string _microsoftId = string.Empty;
         private string _externalId = string.Empty;
         private string _userName = string.Empty;
@@ -31,6 +34,7 @@ namespace AumauiCL.Models.User
         private string _roles = string.Empty;
 
         // Cached computed properties
+        private SyncState? _syncState;
         private UserIdentity? _identity;
         private UserContactInformation? _contactInfo;
         private UserOrganization? _organization;
@@ -39,7 +43,11 @@ namespace AumauiCL.Models.User
 
         #region Public Properties
         [PrimaryKey, AutoIncrement]
-        public int ID { get; set; }
+        public int ID
+        {
+            get => _id;
+            set => SetField(ref _id, value);
+        }
 
         // Identity
         [Unique]
@@ -188,6 +196,9 @@ namespace AumauiCL.Models.User
 
         // Navigation Properties
         [Ignore]
+        public SyncState SyncState => _syncState ??= new SyncState();
+
+        [Ignore]
         public List<UserRole> UserRoles { get; set; } = new();
 
         [Ignore]
@@ -240,30 +251,8 @@ namespace AumauiCL.Models.User
         public UserAudit? Audit { get; set; }
         #endregion
 
-        #region INotifyPropertyChanged Implementation
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        protected bool SetField<T>(ref T field, T value, string? relatedComputedProperty = null, [CallerMemberName] string? propertyName = null)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-
-            field = value;
-            OnPropertyChanged(propertyName);
-
-            // Invalidate related computed property cache
-            InvalidateComputedProperty(relatedComputedProperty);
-
-            return true;
-        }
-        #endregion
-
         #region Cache Management
-        private void InvalidateComputedProperty(string? propertyName)
+        protected override void InvalidateComputedProperty(string? propertyName)
         {
             switch (propertyName)
             {
@@ -285,6 +274,10 @@ namespace AumauiCL.Models.User
                     break;
             }
         }
+        #endregion
+
+        #region Cache Management
+
 
         public void InvalidateAllCache()
         {

@@ -24,7 +24,7 @@
                      Style="width: 100%; margin-bottom: 16px;" />
 
     <FluentButton Appearance="Appearance.Accent"
-                  OnClick="@(() => ViewModel.LoginWithMicrosoftCommand.ExecuteAsync(null))"
+                  OnClick="@OnMicrosoftLogin"
                   Disabled="@(!ViewModel.CanLogin || ViewModel.IsBusy)"
                   Style="width: 100%; margin-bottom: 24px;">
         @if (ViewModel.IsBusy)
@@ -70,6 +70,16 @@
 </FluentCard>
 
 @code {
+    private async Task OnMicrosoftLogin()
+    {
+        await ViewModel.LoginWithMicrosoftCommand.ExecuteAsync(null);
+
+        if (string.IsNullOrEmpty(ViewModel.ErrorMessage))
+        {
+            Navigation.NavigateTo("/sync");
+        }
+    }
+
     private async Task OnStandardLogin()
     {
         await ViewModel.LoginWithStandardCommand.ExecuteAsync(null);

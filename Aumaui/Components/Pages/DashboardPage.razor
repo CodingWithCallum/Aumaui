@@ -1,6 +1,98 @@
 @page "/dashboard"
+@using AumauiCL.ViewModels
 @using Microsoft.FluentUI.AspNetCore.Components
+@inject DashboardViewModel ViewModel
+@inject NavigationManager Navigation
 
-<h3>Dashboard</h3>
+<PageTitle>Dashboard</PageTitle>
 
-<FluentLabel>Welcome to the Dashboard!</FluentLabel>
+<FluentLayout Style="padding: 24px;">
+    
+    @* User Profile Section *@
+    <FluentCard Style="margin-bottom: 24px; padding: 16px;">
+        <FluentLabel Typo="Typography.H4">Welcome, @(ViewModel.CurrentUser?.Name ?? "User")</FluentLabel>
+        <FluentLabel Typo="Typography.Body">@(ViewModel.CurrentUser?.Company ?? "Company")</FluentLabel>
+        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">@(ViewModel.CurrentUser?.Email)</FluentLabel>
+    </FluentCard>
+
+    @* Sync Status Section *@
+    <FluentCard Style="margin-bottom: 24px; padding: 16px;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <FluentLabel Typo="Typography.H6">Sync Status:</FluentLabel>
+            <FluentLabel Typo="Typography.Body" Color="@(ViewModel.IsBusy ? Color.Info : Color.Success)">
+                @ViewModel.SyncStatus
+            </FluentLabel>
+        </FluentStack>
+        
+        @if (ViewModel.IsBusy)
+        {
+            <FluentProgress Min="0" Max="100" Value="@((int)ViewModel.SyncProgress)" Style="width: 100%; margin-top: 12px;" />
+        }
+
+        <FluentButton Appearance="Appearance.Accent" 
+                      OnClick="@ViewModel.SyncNowCommand.ExecuteAsync" 
+                      Disabled="@ViewModel.IsBusy"
+                      Style="margin-top: 16px;">
+            Sync Now
+        </FluentButton>
+    </FluentCard>
+
+    @* Module Navigation *@
+    <FluentGrid Spacing="3" Justify="JustifyContent.FlexStart">
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard Style="min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;"
+                        @onclick="@(() => NavigateTo("/audits"))">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Clipboard())" Color="Color.Accent" />
+                <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">Audits</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+
+        <FluentGridItem xs="12" sm="6" md="4">
+             <FluentCard Style="min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;"
+                        @onclick="@(() => NavigateTo("/incidents"))">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Warning())" Color="Color.Warning" />
+                <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">Incidents</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+        
+        <FluentGridItem xs="12" sm="6" md="4">
+             <FluentCard Style="min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;"
+                        @onclick="@(() => NavigateTo("/checklists"))">
+                <FluentIcon Value="@(new Icons.Regular.Size32.CheckmarkCircle())" Color="Color.Success" />
+                <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">Checklists</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+    </FluentGrid>
+
+    <FluentDivider Style="margin: 24px 0;" />
+
+    <FluentButton Appearance="Appearance.Outline" 
+                  OnClick="@Logout" 
+                  Style="width: 100%;">
+        Logout
+    </FluentButton>
+
+</FluentLayout>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync();
+    }
+
+    private void NavigateTo(string url)
+    {
+        Navigation.NavigateTo(url);
+    }
+
+    private async Task Logout()
+    {
+        await ViewModel.LogoutCommand.ExecuteAsync(null);
+        Navigation.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        ViewModel.Dispose();
+    }
+}

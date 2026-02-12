@@ -1,13 +1,13 @@
-﻿using MyMauiApp.Models;
+﻿using AumauiCL.Models.User;
 
 namespace AumauiCL.Interfaces
 {
     public interface IAuthService
     {
-        Task<UserRecord?> GetCurrentUserAsync();
+        Task<UserModel?> GetCurrentUserAsync();
         Task<string> ResolveTenantAsync(string companyCode);
-        Task<UserRecord> LoginWithMicrosoftAsync(string companyCode);
-        Task<UserRecord> LoginWithStandardAsync(string companyCode, string email, string password);
+        Task<UserModel> LoginWithMicrosoftAsync(string companyCode);
+        Task<UserModel> LoginWithStandardAsync(string companyCode, string email, string password);
         Task LogoutAsync();
     }
 }

@@ -28,7 +28,7 @@ namespace Aumaui
 
                 // 2. Standard Login
                 var user = await _authService.LoginWithStandardAsync("Contoso", "test@test.com", "password");
-                Console.WriteLine($"Logged in user: {user.Email}, Token: {user.AccessToken}");
+                Console.WriteLine($"Logged in user: {user.Email}");
 
                 // 3. Check Persistence
                 var storedUser = await _authService.GetCurrentUserAsync();
