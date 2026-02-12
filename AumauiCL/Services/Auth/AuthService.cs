@@ -10,14 +10,14 @@ namespace AumauiCL.Services.Auth
     public class AuthService : IAuthService
     {
         private readonly DatabaseService _databaseService;
-        private readonly SyncService _syncService;
+        private readonly ISyncService _syncService;
 
         // MSAL Configuration
         private const string ClientId = "YOUR_CLIENT_ID_HERE"; // Placeholder
         private const string RedirectUri = "msauth://com.companyname.aumaui"; // Placeholder
         private string[] Scopes = new string[] { "User.Read" };
 
-        public AuthService(DatabaseService databaseService, SyncService syncService)
+        public AuthService(DatabaseService databaseService, ISyncService syncService)
         {
             _databaseService = databaseService;
             _syncService = syncService;
