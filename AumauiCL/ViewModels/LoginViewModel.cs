@@ -17,7 +17,7 @@ public partial class LoginViewModel : ObservableValidator
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoginWithMicrosoftCommand))]
     [NotifyCanExecuteChangedFor(nameof(LoginWithStandardCommand))]
-    [Required(ErrorMessage = "Company Code is required")]
+    // Removed [Required] to allow flexibility in login flows (e.g. Standard login might not need it initially)
     private string _companyCode = string.Empty;
 
     [ObservableProperty]
@@ -35,12 +35,21 @@ public partial class LoginViewModel : ObservableValidator
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
-    public bool CanLogin => !string.IsNullOrWhiteSpace(CompanyCode) && !HasErrors;
+    // CanLogin no longer strictly requires CompanyCode to be populated
+    public bool CanLogin => !HasErrors;
 
     [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginWithMicrosoftAsync()
     {
         if (IsBusy) return;
+
+        // Manual validation for Microsoft Login
+        if (string.IsNullOrWhiteSpace(CompanyCode))
+        {
+            ErrorMessage = "Company Code is required for Microsoft Login.";
+            return;
+        }
+
         ValidateAllProperties();
         if (HasErrors) return;
 

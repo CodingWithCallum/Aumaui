@@ -20,14 +20,16 @@
         @if (_currentMode == LoginMode.Selection)
         {
             <div class="view-container">
+                <!-- Xsys Login (Primary Emphasis) -->
+                <button class="btn-login-option btn-xsys" @onclick="() => SwitchMode(LoginMode.Xsys)">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4V12L17.5 15.25L16.5 16.75L10 13V4H12Z" fill="white"/></svg>
+                    Sign in with Xsys ID
+                </button>
+
+                <!-- Microsoft Login (Secondary Emphasis) -->
                 <button class="btn-login-option btn-microsoft" @onclick="() => SwitchMode(LoginMode.Microsoft)">
                     <svg width="20" height="20" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 0H10.5556V10.5556H0V0Z" fill="#F25022"/><path d="M12.4444 0H23V10.5556H12.4444V0Z" fill="#7FBA00"/><path d="M0 12.4445H10.5556V23H0V12.4445Z" fill="#00A4EF"/><path d="M12.4444 12.4445H23V23H12.4444V12.4445Z" fill="#FFB900"/></svg>
                     Continue with Microsoft
-                </button>
-
-                <button class="btn-login-option btn-xsys" @onclick="() => SwitchMode(LoginMode.Xsys)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4V12L17.5 15.25L16.5 16.75L10 13V4H12Z" fill="currentColor"/></svg>
-                    Sign in with Xsys ID
                 </button>
             </div>
         }
@@ -37,12 +39,6 @@
                 <button class="btn-back" @onclick="GoBack">
                     <span>←</span> Back
                 </button>
-
-                <FluentTextField @bind-Value="ViewModel.CompanyCode"
-                                 Label="Company Code"
-                                 Placeholder="e.g. AUM001"
-                                 Required="true"
-                                 Style="width: 100%;" />
 
                 <FluentTextField @bind-Value="ViewModel.Email"
                                  Label="Email Address"
@@ -55,6 +51,11 @@
                                  Label="Password"
                                  TextFieldType="TextFieldType.Password"
                                  Required="true"
+                                 Style="width: 100%; margin-bottom: 12px;" />
+
+                <FluentTextField @bind-Value="ViewModel.CompanyCode"
+                                 Label="Company Code (Optional)"
+                                 Placeholder="e.g. AUM001"
                                  Style="width: 100%; margin-bottom: 12px;" />
 
                 <FluentButton Appearance="Appearance.Accent"
