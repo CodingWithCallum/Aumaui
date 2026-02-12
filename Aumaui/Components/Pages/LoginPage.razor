@@ -1,84 +1,82 @@
-@page "/"
 @page "/login"
+@page "/"
 @using AumauiCL.ViewModels
-@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.FluentUI.AspNetCore.Components
+@using Aumaui.Components.Layout
+@layout LoginLayout
 @inject LoginViewModel ViewModel
 @inject NavigationManager Navigation
 
-<FluentCard Width="400px" Style="margin: 20px auto; padding: 20px;">
-    <h3>Login</h3>
+<PageTitle>Login</PageTitle>
 
-    @if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
+@* Removed inline flex style since layout handles it *@
+<FluentCard Style="width: 100%; padding: 24px;">
+    <h2 style="text-align: center; margin-bottom: 24px;">Aumaui Login</h2>
+
+    <FluentLabel Typo="Typography.Body" Color="Color.Info" Style="margin-bottom: 16px; display: block; text-align: center;">
+        Demo: Use any code/email and password "password"
+    </FluentLabel>
+
+    <FluentTextField @bind-Value="ViewModel.CompanyCode"
+                     Label="Company Code"
+                     Placeholder="Enter Company Code"
+                     Required="true"
+                     Style="width: 100%; margin-bottom: 16px;" />
+
+    <FluentButton Appearance="Appearance.Accent"
+                  OnClick="@(() => ViewModel.LoginWithMicrosoftCommand.ExecuteAsync(null))"
+                  Disabled="@(!ViewModel.CanLogin || ViewModel.IsBusy)"
+                  Style="width: 100%; margin-bottom: 24px;">
+        @if (ViewModel.IsBusy)
+        {
+            <FluentProgressRing Style="width: 20px; height: 20px;" />
+        }
+        else
+        {
+            <span>Login with Microsoft</span>
+        }
+    </FluentButton>
+
+    <FluentDivider Style="margin-bottom: 24px;">OR</FluentDivider>
+
+    <FluentTextField @bind-Value="ViewModel.Email"
+                     Label="Email"
+                     TextFieldType="TextFieldType.Email"
+                     Required="true"
+                     Style="width: 100%; margin-bottom: 16px;" />
+
+    <FluentTextField @bind-Value="ViewModel.Password"
+                     Label="Password"
+                     TextFieldType="TextFieldType.Password"
+                     Required="true"
+                     Style="width: 100%; margin-bottom: 24px;" />
+
+    <FluentButton Appearance="Appearance.Neutral"
+                  OnClick="@OnStandardLogin"
+                  Disabled="@(!ViewModel.CanLogin || ViewModel.IsBusy)"
+                  Style="width: 100%;">
+        Standard Login
+    </FluentButton>
+
+    @if (!string.IsNullOrWhiteSpace(ViewModel.ErrorMessage))
     {
-        <FluentMessageBar Title="Error" Intent="@MessageIntent.Error">
+        <FluentMessageBar Intent="MessageIntent.Error"
+                          AllowDismiss="true"
+                          OnDismiss="@(() => ViewModel.ErrorMessage = string.Empty)"
+                          Style="margin-top: 16px;">
             @ViewModel.ErrorMessage
         </FluentMessageBar>
     }
-
-    <EditForm Model="@ViewModel" OnValidSubmit="@HandleStandardLogin">
-        <DataAnnotationsValidator />
-        
-        <FluentTextField @bind-Value="@ViewModel.CompanyCode" Label="Company Code" Required="true" Placeholder="Enter Company Code" Style="width: 100%; margin-bottom: 15px;" />
-        <ValidationMessage For="@(() => ViewModel.CompanyCode)" />
-
-        <FluentButton Appearance="@Appearance.Accent" OnClick="@HandleMicrosoftLogin" Style="width: 100%; margin-bottom: 20px;" Disabled="@(!ViewModel.CanLogin || ViewModel.IsBusy)">
-            @if (ViewModel.IsBusy)
-            {
-                <FluentProgressRing Style="width: 20px; height: 20px;" />
-            }
-            else
-            {
-                <span>Sign in with Microsoft</span>
-            }
-        </FluentButton>
-
-        <FluentAccordion>
-            <FluentAccordionItem Heading="Standard Login">
-                <FluentTextField @bind-Value="@ViewModel.Email" Label="Email" Required="true" Placeholder="Enter Email" Style="width: 100%; margin-bottom: 10px;" />
-                <ValidationMessage For="@(() => ViewModel.Email)" />
-
-                <FluentTextField @bind-Value="@ViewModel.Password" Label="Password" Required="true" TextFieldType="@TextFieldType.Password" Placeholder="Enter Password" Style="width: 100%; margin-bottom: 15px;" />
-                <ValidationMessage For="@(() => ViewModel.Password)" />
-
-                 <FluentButton Type="@ButtonType.Submit" Appearance="@Appearance.Neutral" Style="width: 100%;" Disabled="@ViewModel.IsBusy">
-                    Login
-                </FluentButton>
-            </FluentAccordionItem>
-        </FluentAccordion>
-    </EditForm>
 </FluentCard>
 
 @code {
-    protected override void OnInitialized()
-    {
-        ViewModel.PropertyChanged += OnPropertyChanged;
-    }
-
-    private void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        StateHasChanged();
-    }
-
-    private async Task HandleMicrosoftLogin()
-    {
-        await ViewModel.LoginWithMicrosoftCommand.ExecuteAsync(null);
-        if (!ViewModel.HasErrors && string.IsNullOrEmpty(ViewModel.ErrorMessage))
-        {
-             Navigation.NavigateTo("/sync");
-        }
-    }
-
-    private async Task HandleStandardLogin()
+    private async Task OnStandardLogin()
     {
         await ViewModel.LoginWithStandardCommand.ExecuteAsync(null);
-         if (!ViewModel.HasErrors && string.IsNullOrEmpty(ViewModel.ErrorMessage))
+        
+        if (string.IsNullOrEmpty(ViewModel.ErrorMessage))
         {
-             Navigation.NavigateTo("/sync");
+            Navigation.NavigateTo("/sync");
         }
-    }
-
-    public void Dispose()
-    {
-        ViewModel.PropertyChanged -= OnPropertyChanged;
     }
 }
