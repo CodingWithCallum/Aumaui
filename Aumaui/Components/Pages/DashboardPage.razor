@@ -42,7 +42,7 @@
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard Style="min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;"
                         @onclick="@(() => NavigateTo("/audits"))">
-                <FluentIcon Value="@(new Icons.Regular.Size32.Clipboard())" Color="Color.Accent" />
+                <span style="font-size: 32px;">📋</span>
                 <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">Audits</FluentLabel>
             </FluentCard>
         </FluentGridItem>
@@ -50,7 +50,7 @@
         <FluentGridItem xs="12" sm="6" md="4">
              <FluentCard Style="min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;"
                         @onclick="@(() => NavigateTo("/incidents"))">
-                <FluentIcon Value="@(new Icons.Regular.Size32.Warning())" Color="Color.Warning" />
+                <span style="font-size: 32px;">⚠️</span>
                 <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">Incidents</FluentLabel>
             </FluentCard>
         </FluentGridItem>
@@ -58,7 +58,7 @@
         <FluentGridItem xs="12" sm="6" md="4">
              <FluentCard Style="min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;"
                         @onclick="@(() => NavigateTo("/checklists"))">
-                <FluentIcon Value="@(new Icons.Regular.Size32.CheckmarkCircle())" Color="Color.Success" />
+                <span style="font-size: 32px;">✅</span>
                 <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">Checklists</FluentLabel>
             </FluentCard>
         </FluentGridItem>
