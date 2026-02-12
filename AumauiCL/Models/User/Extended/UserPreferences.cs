@@ -25,19 +25,19 @@ namespace AumauiCL.Models.User.Extended // FIX: Consistent casing
         [Annotation.MaxLength(20)]
         public string DateFormat { get; set; } = "yyyy-MM-dd";
 
-        // ADD: MAUI-specific preferences
+        // MAUI-specific preferences
         public bool OfflineModeEnabled { get; set; } = true;
         public int SyncFrequencyMinutes { get; set; } = 30;
         public bool BiometricAuthEnabled { get; set; } = false;
         public string PreferredFontSize { get; set; } = "Medium";
 
-        // ADD: Validation methods
+        // Validation methods
         public bool IsValidTheme() => Theme is "Light" or "Dark" or "System";
 
         public bool IsValidLanguage() => Language.Length >= 2 && Language.Contains('-');
 
-        // ADD: Helper for datetime formatting
-        [Ignore]
+        // Helper for datetime formatting
+        //[Ignore] Ignore doesn't seem to like working here, so we can just use a method instead
         public string FormatDateTime(DateTime dateTime) => dateTime.ToString(DateFormat);
 
         // ADD: Update method

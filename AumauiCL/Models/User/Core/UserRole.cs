@@ -21,14 +21,14 @@ namespace AumauiCL.Models.User.Core
         public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; } = true;
 
-        // ADD: Role validation
+        // Role validation
         [Ignore]
         public bool IsExpired => ExpiryDate.HasValue && ExpiryDate.Value < DateTime.UtcNow;
 
         [Ignore]
         public bool IsCurrentlyActive => IsActive && !IsExpired;
 
-        // ADD: Common role checks
+        // Common role checks
         [Ignore]
         public bool IsAdminRole => RoleName.Contains("Admin", StringComparison.OrdinalIgnoreCase);
 

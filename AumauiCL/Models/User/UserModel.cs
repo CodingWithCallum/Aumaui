@@ -1,15 +1,13 @@
 ﻿using AumauiCL.Models.User.Core;
 using AumauiCL.Models.User.Extended;
-using AumauiCL.Models.User.Core;
 using SQLite;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.CompilerServices;
 using Annotations = System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User
 {
-    [Table("Users")]
+    [SQLite.Table("Users")]
     public class UserModel : INotifyPropertyChanged
     {
         #region Private Fields

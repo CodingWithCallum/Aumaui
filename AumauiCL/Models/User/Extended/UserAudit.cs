@@ -21,12 +21,12 @@ namespace AumauiCL.Models.User.Extended
         [Annotation.MaxLength(100)]
         public string ModifiedBy { get; set; } = string.Empty;
 
-        // ADD: MAUI-specific tracking
+        // MAUI-specific tracking
         public DateTime? LastSyncDate { get; set; }
         public string? DeviceId { get; set; }
         public string? AppVersion { get; set; }
 
-        // ADD: Computed properties for UI
+        // Computed properties for UI
         [Ignore]
         public TimeSpan? TimeSinceLastLogin => LastLoginDate.HasValue ?
             DateTime.UtcNow - LastLoginDate.Value : null;
@@ -34,7 +34,7 @@ namespace AumauiCL.Models.User.Extended
         [Ignore]
         public string LastLoginDisplay => LastLoginDate?.ToString("yyyy-MM-dd HH:mm") ?? "Never";
 
-        // ADD: Update tracking
+        // Update tracking
         public void MarkAsModified(string modifiedBy)
         {
             LastModifiedDate = DateTime.UtcNow;
