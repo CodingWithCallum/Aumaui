@@ -1,101 +1,344 @@
-﻿using SQLite;
-using Client_MAUI_CL.Models.User.Core;
+using Client_MAUI_CL.Models.TestingFolder.User.Core;
+using Client_MAUI_CL.Models.TestingFolder.User.Extended;
+using Client_MAUI_CL.Models.TestingFoler.User.Core;
+using SQLite;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
+using Annotations = System.ComponentModel.DataAnnotations;
 
-namespace AumauiCL.Models.User
+namespace Client_MAUI_CL.Models.TestingFolder.User
 {
-    public class UserModel
+    [Table("Users")]
+    public class UserModel : INotifyPropertyChanged
     {
+        #region Private Fields
+        private string _microsoftId = string.Empty;
+        private string _externalId = string.Empty;
+        private string _userName = string.Empty;
+        private string _title = string.Empty;
+        private string _name = string.Empty;
+        private string _jobTitle = string.Empty;
+        private string _email = string.Empty;
+        private string _telephone = string.Empty;
+        private string _mobileNumber = string.Empty;
+        private string _companyCode = string.Empty;
+        private string _company = string.Empty;
+        private string _division = string.Empty;
+        private string _department = string.Empty;
+        private string _team = string.Empty;
+        private bool _canSignIn = true;
+        private bool _isLockedOut = false;
+        private bool _isTerminated = false;
+        private string _roles = string.Empty;
+
+        // Cached computed properties
+        private UserIdentity? _identity;
+        private UserContactInformation? _contactInfo;
+        private UserOrganization? _organization;
+        private UserAccountStatus? _accountStatus;
+        #endregion
+
+        #region Public Properties
         [PrimaryKey, AutoIncrement]
         public int ID { get; set; }
 
         // Identity
         [Unique]
-        public string MicrosoftId { get; set; }
+        [Annotations.Required, Annotations.MaxLength(50)]
+        public string MicrosoftId
+        {
+            get => _microsoftId;
+            set => SetField(ref _microsoftId, value, nameof(Identity));
+        }
 
         [Unique]
-        public string ExternalId { get; set; }
+        [Annotations.Required, Annotations.MaxLength(50)]
+        public string ExternalId
+        {
+            get => _externalId;
+            set => SetField(ref _externalId, value, nameof(Identity));
+        }
 
-        public string UserName { get; set; }
+        [Annotations.Required, Annotations.MaxLength(50)]
+        public string UserName
+        {
+            get => _userName;
+            set => SetField(ref _userName, value, nameof(Identity));
+        }
 
         // Personal Information
-        public string Title { get; set; }
-        public string Name { get; set; }
-        public string JobTitle { get; set; }
+        [Annotations.MaxLength(10)]
+        public string Title
+        {
+            get => _title;
+            set => SetField(ref _title, value);
+        }
 
-        // Contact Information (embedded)
-        public string Email { get; set; }
-        public string Telephone { get; set; }
-        public string MobileNumber { get; set; }
+        [Annotations.Required, Annotations.MaxLength(100)]
+        public string Name
+        {
+            get => _name;
+            set => SetField(ref _name, value);
+        }
 
-        // Organization (embedded)
-        public string CompanyCode { get; set; }
+        [Annotations.MaxLength(100)]
+        public string JobTitle
+        {
+            get => _jobTitle;
+            set => SetField(ref _jobTitle, value);
+        }
+
+        // Contact Information
+        [Annotations.Required, Annotations.EmailAddress, Annotations.MaxLength(100)]
+        [Indexed]
+        public string Email
+        {
+            get => _email;
+            set => SetField(ref _email, value, nameof(ContactInfo));
+        }
+
+        [Annotations.MaxLength(20)]
+        public string Telephone
+        {
+            get => _telephone;
+            set => SetField(ref _telephone, value, nameof(ContactInfo));
+        }
+
+        [Annotations.MaxLength(20)]
+        public string MobileNumber
+        {
+            get => _mobileNumber;
+            set => SetField(ref _mobileNumber, value, nameof(ContactInfo));
+        }
+
+        // Organization
+        [Annotations.Required, Annotations.MaxLength(10)]
+        public string CompanyCode
+        {
+            get => _companyCode;
+            set => SetField(ref _companyCode, value, nameof(Organization));
+        }
+
+        [Indexed]
         public int CompanyID { get; set; }
-        public string Company { get; set; }
+
+        [Annotations.Required, Annotations.MaxLength(100)]
+        public string Company
+        {
+            get => _company;
+            set => SetField(ref _company, value, nameof(Organization));
+        }
+
+        [Indexed]
         public int DivisionID { get; set; }
-        public string Division { get; set; }
+
+        [Annotations.MaxLength(100)]
+        public string Division
+        {
+            get => _division;
+            set => SetField(ref _division, value, nameof(Organization));
+        }
+
+        [Indexed]
         public int DepartmentID { get; set; }
-        public string Department { get; set; }
+
+        [Annotations.MaxLength(100)]
+        public string Department
+        {
+            get => _department;
+            set => SetField(ref _department, value, nameof(Organization));
+        }
+
+        [Indexed]
         public int TeamID { get; set; }
-        public string Team { get; set; }
+
+        [Annotations.MaxLength(100)]
+        public string Team
+        {
+            get => _team;
+            set => SetField(ref _team, value, nameof(Organization));
+        }
 
         // Account Status
-        public bool CanSignIn { get; set; }
-        public bool IsLockedOut { get; set; }
-        public bool IsTerminated { get; set; }
+        public bool CanSignIn
+        {
+            get => _canSignIn;
+            set => SetField(ref _canSignIn, value, nameof(AccountStatus));
+        }
+
+        public bool IsLockedOut
+        {
+            get => _isLockedOut;
+            set => SetField(ref _isLockedOut, value, nameof(AccountStatus));
+        }
+
+        public bool IsTerminated
+        {
+            get => _isTerminated;
+            set => SetField(ref _isTerminated, value, nameof(AccountStatus));
+        }
 
         // Legacy role support
         [Obsolete("Use UserRoles navigation property instead")]
-        public string Roles { get; set; }
+        [Annotations.MaxLength(500)]
+        public string Roles
+        {
+            get => _roles;
+            set => SetField(ref _roles, value);
+        }
 
-        // Navigation Properties (for future expansion)
+        // Navigation Properties
         [Ignore]
         public List<UserRole> UserRoles { get; set; } = new();
 
         [Ignore]
-        public UserIdentity Identity => new()
+        public UserIdentity Identity =>
+            _identity ??= new UserIdentity
+            {
+                MicrosoftId = MicrosoftId,
+                ExternalId = ExternalId,
+                UserName = UserName
+            };
+
+        [Ignore]
+        public UserContactInformation ContactInfo =>
+            _contactInfo ??= new UserContactInformation
+            {
+                Email = Email,
+                Telephone = Telephone,
+                MobileNumber = MobileNumber
+            };
+
+        [Ignore]
+        public UserOrganization Organization =>
+            _organization ??= new UserOrganization
+            {
+                CompanyCode = CompanyCode,
+                CompanyID = CompanyID,
+                Company = Company,
+                DivisionID = DivisionID,
+                Division = Division,
+                DepartmentID = DepartmentID,
+                Department = Department,
+                TeamID = TeamID,
+                Team = Team
+            };
+
+        [Ignore]
+        public UserAccountStatus AccountStatus =>
+            _accountStatus ??= new UserAccountStatus
+            {
+                CanSignIn = CanSignIn,
+                IsLockedOut = IsLockedOut,
+                IsTerminated = IsTerminated
+            };
+
+        // Extended Models (loaded separately)
+        [Ignore]
+        public UserPreferences? Preferences { get; set; }
+
+        [Ignore]
+        public UserAudit? Audit { get; set; }
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
-            ID = ID,
-            MicrosoftId = MicrosoftId,
-            ExternalId = ExternalId,
-            UserName = UserName
-        };
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
-        [Ignore]
-        public UserContactInformation ContactInfo => new()
+        protected bool SetField<T>(ref T field, T value, string? relatedComputedProperty = null, [CallerMemberName] string? propertyName = null)
         {
-            Email = Email,
-            Telephone = Telephone,
-            MobileNumber = MobileNumber
-        };
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
 
-        [Ignore]
-        public UserOrganization Organization => new()
+            field = value;
+            OnPropertyChanged(propertyName);
+
+            // Invalidate related computed property cache
+            InvalidateComputedProperty(relatedComputedProperty);
+
+            return true;
+        }
+        #endregion
+
+        #region Cache Management
+        private void InvalidateComputedProperty(string? propertyName)
         {
-            CompanyCode = CompanyCode,
-            CompanyID = CompanyID,
-            Company = Company,
-            DivisionID = DivisionID,
-            Division = Division,
-            DepartmentID = DepartmentID,
-            Department = Department,
-            TeamID = TeamID,
-            Team = Team
-        };
+            switch (propertyName)
+            {
+                case nameof(Identity):
+                    _identity = null;
+                    OnPropertyChanged(nameof(Identity));
+                    break;
+                case nameof(ContactInfo):
+                    _contactInfo = null;
+                    OnPropertyChanged(nameof(ContactInfo));
+                    break;
+                case nameof(Organization):
+                    _organization = null;
+                    OnPropertyChanged(nameof(Organization));
+                    break;
+                case nameof(AccountStatus):
+                    _accountStatus = null;
+                    OnPropertyChanged(nameof(AccountStatus));
+                    break;
+            }
+        }
 
-        [Ignore]
-        public UserAccountStatus AccountStatus => new()
+        public void InvalidateAllCache()
         {
-            CanSignIn = CanSignIn,
-            IsLockedOut = IsLockedOut,
-            IsTerminated = IsTerminated
-        };
+            _identity = null;
+            _contactInfo = null;
+            _organization = null;
+            _accountStatus = null;
+            OnPropertyChanged(nameof(Identity));
+            OnPropertyChanged(nameof(ContactInfo));
+            OnPropertyChanged(nameof(Organization));
+            OnPropertyChanged(nameof(AccountStatus));
+        }
+        #endregion
 
-        // Extended Models
-        [Ignore]
-        public UserPreferences Preferences { get; set; } = new();
+        #region Helper Methods
+        public void UpdateContactInfo(string email, string telephone, string mobile)
+        {
+            Email = email;
+            Telephone = telephone;
+            MobileNumber = mobile;
+        }
 
-        [Ignore]
-        public UserAudit Audit { get; set; } = new();
+        public void UpdateOrganization(string companyCode, int companyId, string company,
+                                     int divisionId, string division, int departmentId,
+                                     string department, int teamId, string team)
+        {
+            CompanyCode = companyCode;
+            CompanyID = companyId;
+            Company = company;
+            DivisionID = divisionId;
+            Division = division;
+            DepartmentID = departmentId;
+            Department = department;
+            TeamID = teamId;
+            Team = team;
+        }
+
+        public void UpdateAccountStatus(bool canSignIn, bool isLockedOut, bool isTerminated)
+        {
+            CanSignIn = canSignIn;
+            IsLockedOut = isLockedOut;
+            IsTerminated = isTerminated;
+        }
+
+        public bool IsValid()
+        {
+            return !string.IsNullOrEmpty(MicrosoftId) &&
+                   !string.IsNullOrEmpty(ExternalId) &&
+                   !string.IsNullOrEmpty(UserName) &&
+                   !string.IsNullOrEmpty(Email) &&
+                   !string.IsNullOrEmpty(Name);
+        }
+        #endregion
     }
 }
