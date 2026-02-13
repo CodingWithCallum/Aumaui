@@ -9,23 +9,57 @@
 @using System.ComponentModel
 
 <FluentLayout Style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-    <FluentProgressRing Value="@((int)SyncService.SyncProgress)" Width="50px" Height="50px" />
-    <br />
-    <FluentLabel Typo="@Typography.H4">@SyncService.SyncStatus</FluentLabel>
-    <br />
-    <FluentProgress Min="0" Max="100" Value="@((int)SyncService.SyncProgress)" Width="300px" />
+    @if (_syncFailed)
+    {
+        <FluentMessageBar Intent="MessageIntent.Error" AllowDismiss="false">
+            @_errorMessage
+        </FluentMessageBar>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12"
+                     Style="margin-top: 16px; justify-content: center;">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@RetrySync">
+                Retry Sync
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Outline" OnClick="@SkipToDashboard">
+                Continue Anyway
+            </FluentButton>
+        </FluentStack>
+    }
+    else
+    {
+        <FluentProgressRing Value="@((int)SyncService.SyncProgress)" Width="50px" Height="50px" />
+        <br />
+        <FluentLabel Typo="@Typography.H4">@SyncService.SyncStatus</FluentLabel>
+        <br />
+        <FluentProgress Min="0" Max="100" Value="@((int)SyncService.SyncProgress)" Width="300px" />
+
+        <FluentButton Appearance="Appearance.Lightweight"
+                      OnClick="@SkipToDashboard"
+                      Style="margin-top: 24px; font-size: 0.85rem;">
+            Skip and use cached data
+        </FluentButton>
+    }
 </FluentLayout>
 
 @code {
     private PropertyChangedEventHandler? _propertyChangedHandler;
+    private bool _syncFailed;
+    private string _errorMessage = string.Empty;
+    private CancellationTokenSource? _timeoutCts;
 
     protected override async Task OnInitializedAsync()
     {
-        // Subscribe to property changes to trigger UI updates
+        // Check if data is fresh — skip sync if last sync was within 15 minutes
+        var shouldSync = await SyncService.ShouldSyncAsync(TimeSpan.FromMinutes(15));
+        if (!shouldSync)
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
         _propertyChangedHandler = async (sender, args) =>
         {
             await InvokeAsync(StateHasChanged);
-            
+
             if (args.PropertyName == nameof(SyncService.SyncProgress) && SyncService.SyncProgress >= 100)
             {
                 // Small delay to show 100% completion before navigating
@@ -35,13 +69,59 @@
         };
 
         SyncService.PropertyChanged += _propertyChangedHandler;
+        await StartSyncWithTimeoutAsync();
+    }
 
-        // Start the sync process
-        await SyncService.ExecuteSyncAsync();
+    private async Task StartSyncWithTimeoutAsync()
+    {
+        _syncFailed = false;
+        _errorMessage = string.Empty;
+        _timeoutCts?.Cancel();
+        _timeoutCts = new CancellationTokenSource();
+
+        try
+        {
+            var syncTask = SyncService.ExecuteSyncAsync();
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(60), _timeoutCts.Token);
+
+            var completed = await Task.WhenAny(syncTask, timeoutTask);
+            if (completed == timeoutTask && !syncTask.IsCompleted)
+            {
+                _syncFailed = true;
+                _errorMessage = "Sync timed out after 60 seconds. You can retry or continue with cached data.";
+            }
+            else
+            {
+                await syncTask; // Observe any exception from the sync task
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout token cancelled during retry — ignore
+        }
+        catch (Exception ex)
+        {
+            _syncFailed = true;
+            _errorMessage = $"Sync failed: {ex.Message}";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RetrySync()
+    {
+        await StartSyncWithTimeoutAsync();
+    }
+
+    private void SkipToDashboard()
+    {
+        Navigation.NavigateTo("/dashboard");
     }
 
     public void Dispose()
     {
+        _timeoutCts?.Cancel();
+        _timeoutCts?.Dispose();
         if (_propertyChangedHandler is not null)
         {
             SyncService.PropertyChanged -= _propertyChangedHandler;

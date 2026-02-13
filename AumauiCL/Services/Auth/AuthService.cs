@@ -70,6 +70,12 @@ namespace AumauiCL.Services.Auth
                     throw new Exception(msg);
                 }
 
+                // Validate that the API returned an access token
+                if (string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
+                {
+                    throw new Exception("Login succeeded but no access token was returned. Please try again.");
+                }
+
                 // Populate UserModel from API response data
                 var user = new UserModel
                 {
@@ -78,22 +84,31 @@ namespace AumauiCL.Services.Auth
                     MicrosoftId = msalResult.MicrosoftUserId,
                     CompanyCode = companyCode,
                     Company = apiResponse.ResponseData.User?.Company ?? string.Empty,
-                    ExternalId = apiResponse.ResponseData.User?.UserID ?? Guid.NewGuid().ToString(),
+                    ExternalId = apiResponse.ResponseData.User?.UserID
+                        ?? throw new Exception("Login succeeded but the server did not return a User ID. Please contact support."),
                     UserName = msalResult.Email
                 };
 
                 // Store tenant context + tokens
                 await _secureStorage.SetAsync(CompanyCodeKey, companyCode);
-                if (!string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
-                    await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
+                await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
                 if (!string.IsNullOrEmpty(apiResponse.ResponseData.RefreshToken))
                     await _secureStorage.SetAsync(RefreshTokenKey, apiResponse.ResponseData.RefreshToken);
 
                 await _databaseService.SaveItemAsync(user);
-                await _syncService.SyncModuleAsync<UserModel>("users");
 
                 // Mark user as authenticated in Blazor auth state
                 _authStateProvider.MarkUserAsAuthenticated(user.Email);
+
+                // Attempt post-login sync — failure is non-fatal; SyncPage will retry
+                try
+                {
+                    await _syncService.SyncModuleAsync<UserModel>("users");
+                }
+                catch (Exception syncEx)
+                {
+                    Debug.WriteLine($"Post-login sync failed (non-fatal): {syncEx.Message}");
+                }
 
                 return user;
             }
@@ -136,6 +151,12 @@ namespace AumauiCL.Services.Auth
                     throw new Exception(msg);
                 }
 
+                // Validate that the API returned an access token
+                if (string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
+                {
+                    throw new Exception("Login succeeded but no access token was returned. Please try again.");
+                }
+
                 // Populate UserModel from API response data
                 var user = new UserModel
                 {
@@ -143,23 +164,32 @@ namespace AumauiCL.Services.Auth
                     Name = apiResponse.ResponseData.User?.Name ?? email.Split('@')[0],
                     CompanyCode = companyCode,
                     Company = apiResponse.ResponseData.User?.Company ?? string.Empty,
-                    MicrosoftId = "N/A",
-                    ExternalId = apiResponse.ResponseData.User?.UserID ?? Guid.NewGuid().ToString(),
+                    MicrosoftId = null,
+                    ExternalId = apiResponse.ResponseData.User?.UserID
+                        ?? throw new Exception("Login succeeded but the server did not return a User ID. Please contact support."),
                     UserName = apiResponse.ResponseData.User?.Email ?? email
                 };
 
                 // Store tenant context + tokens
                 await _secureStorage.SetAsync(CompanyCodeKey, companyCode);
-                if (!string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
-                    await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
+                await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
                 if (!string.IsNullOrEmpty(apiResponse.ResponseData.RefreshToken))
                     await _secureStorage.SetAsync(RefreshTokenKey, apiResponse.ResponseData.RefreshToken);
 
                 await _databaseService.SaveItemAsync(user);
-                await _syncService.SyncModuleAsync<UserModel>("users");
 
                 // Mark user as authenticated in Blazor auth state
                 _authStateProvider.MarkUserAsAuthenticated(user.Email);
+
+                // Attempt post-login sync — failure is non-fatal; SyncPage will retry
+                try
+                {
+                    await _syncService.SyncModuleAsync<UserModel>("users");
+                }
+                catch (Exception syncEx)
+                {
+                    Debug.WriteLine($"Post-login sync failed (non-fatal): {syncEx.Message}");
+                }
 
                 return user;
             }

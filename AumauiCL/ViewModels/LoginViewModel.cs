@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using AumauiCL.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,7 +18,9 @@ public partial class LoginViewModel : ObservableValidator
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoginWithMicrosoftCommand))]
     [NotifyCanExecuteChangedFor(nameof(LoginWithStandardCommand))]
-    // Removed [Required] to allow flexibility in login flows (e.g. Standard login might not need it initially)
+    [Required(ErrorMessage = "Company Code is required.")]
+    [MaxLength(6, ErrorMessage = "Company Code must be 6 characters or fewer.")]
+    [RegularExpression(@"^[A-Za-z0-9]{1,6}$", ErrorMessage = "Company Code must be alphanumeric.")]
     private string _companyCode = string.Empty;
 
     [ObservableProperty]
@@ -33,8 +36,9 @@ public partial class LoginViewModel : ObservableValidator
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
-    // CanLogin no longer strictly requires CompanyCode to be populated
-    public bool CanLogin => !HasErrors;
+    public bool CanLogin =>
+        !HasErrors &&
+        !string.IsNullOrWhiteSpace(CompanyCode);
 
     [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginWithMicrosoftAsync()
@@ -48,9 +52,17 @@ public partial class LoginViewModel : ObservableValidator
             return;
         }
 
+        if (CompanyCode.Length > 6)
+        {
+            ErrorMessage = "Company Code must be 6 characters or fewer.";
+            return;
+        }
 
-        // ValidateAllProperties(); // Removed to prevent blocking by Standard login fields
-        // if (HasErrors) return;   // Relying on manual validation for this flow
+        if (!Regex.IsMatch(CompanyCode, @"^[A-Za-z0-9]+$"))
+        {
+            ErrorMessage = "Company Code must contain only letters and numbers.";
+            return;
+        }
 
         IsBusy = true;
         ErrorMessage = string.Empty;
@@ -79,6 +91,18 @@ public partial class LoginViewModel : ObservableValidator
         if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(CompanyCode))
         {
             ErrorMessage = "Company Code, Email, and Password are required.";
+            return;
+        }
+
+        if (CompanyCode.Length > 6)
+        {
+            ErrorMessage = "Company Code must be 6 characters or fewer.";
+            return;
+        }
+
+        if (!Regex.IsMatch(CompanyCode, @"^[A-Za-z0-9]+$"))
+        {
+            ErrorMessage = "Company Code must contain only letters and numbers.";
             return;
         }
 

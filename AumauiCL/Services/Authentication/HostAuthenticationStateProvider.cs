@@ -27,23 +27,32 @@ public class HostAuthenticationStateProvider : AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
+        // On first call, rehydrate from storage
         if (!_initialized)
         {
             _initialized = true;
-            var token = await _secureStorage.GetAsync("access_token");
-            if (!string.IsNullOrEmpty(token))
-            {
-                var users = await _databaseService.GetItemsAsync<UserModel>();
-                var user = users.FirstOrDefault();
-                if (user != null)
-                {
-                    var identity = new ClaimsIdentity(
-                        new[] { new Claim(ClaimTypes.Name, user.Email) }, "CustomAuth");
-                    _currentUser = new ClaimsPrincipal(identity);
-                }
-            }
+            await TryRehydrateAsync();
         }
         return new AuthenticationState(_currentUser);
+    }
+
+    private async Task TryRehydrateAsync()
+    {
+        var token = await _secureStorage.GetAsync("access_token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            var users = await _databaseService.GetItemsAsync<UserModel>();
+            var user = users.FirstOrDefault();
+            if (user != null)
+            {
+                var identity = new ClaimsIdentity(
+                    new[] { new Claim(ClaimTypes.Name, user.Email) }, "CustomAuth");
+                _currentUser = new ClaimsPrincipal(identity);
+                return;
+            }
+        }
+        // No valid token or user — ensure unauthenticated state
+        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
     }
 
     public void MarkUserAsAuthenticated(string email)

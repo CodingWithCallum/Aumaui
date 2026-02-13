@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using AumauiCL.Interfaces;
 using AumauiCL.Models.Core;
@@ -18,6 +19,9 @@ namespace AumauiCL.Services.Sync
     {
         private readonly IDatabaseService _databaseService;
         private readonly IApiService _apiService;
+        private readonly ISecureStorageService _secureStorage;
+
+        private const string LastSyncKey = "last_sync_utc";
 
         private double _syncProgress;
         private string _syncStatus = "Ready";
@@ -51,10 +55,11 @@ namespace AumauiCL.Services.Sync
             }
         }
 
-        public SyncService(IDatabaseService databaseService, IApiService apiService)
+        public SyncService(IDatabaseService databaseService, IApiService apiService, ISecureStorageService secureStorage)
         {
             _databaseService = databaseService;
             _apiService = apiService;
+            _secureStorage = secureStorage;
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -93,6 +98,9 @@ namespace AumauiCL.Services.Sync
                 await SyncModuleAsync<Models.Checklists.ChecklistAggregate>("checklists");
 
                 NotifyProgress("Sync Completed Successfully", 100, false);
+
+                // Stamp the successful sync time
+                await _secureStorage.SetAsync(LastSyncKey, DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
             }
             catch (Exception ex)
             {
@@ -160,6 +168,24 @@ namespace AumauiCL.Services.Sync
             // Simple increment for demo purposes
             var newProgress = Math.Min(SyncProgress + 25, 100);
             NotifyProgress($"Synced {endpointName}: {pushedCount} pushed, {serverItems.Count} pulled.", newProgress);
+        }
+
+        public async Task<DateTime?> GetLastSyncDateAsync()
+        {
+            var stored = await _secureStorage.GetAsync(LastSyncKey);
+            if (!string.IsNullOrEmpty(stored) &&
+                DateTime.TryParse(stored, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var date))
+            {
+                return date;
+            }
+            return null;
+        }
+
+        public async Task<bool> ShouldSyncAsync(TimeSpan maxAge)
+        {
+            var lastSync = await GetLastSyncDateAsync();
+            if (lastSync is null) return true;
+            return DateTime.UtcNow - lastSync.Value > maxAge;
         }
     }
 }

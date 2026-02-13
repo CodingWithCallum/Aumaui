@@ -14,7 +14,7 @@ namespace AumauiCL.Models.User
     {
         #region Private Fields
         private int _id; // Backing field for ID
-        private string _microsoftId = string.Empty;
+        private string? _microsoftId;
         private string? _externalId;
         private string _userName = string.Empty;
         private string _title = string.Empty;
@@ -50,9 +50,8 @@ namespace AumauiCL.Models.User
         }
 
         // Identity
-        [Unique]
-        [Annotations.Required, Annotations.MaxLength(50)]
-        public string MicrosoftId
+        [Annotations.MaxLength(50)]
+        public string? MicrosoftId
         {
             get => _microsoftId;
             set => SetField(ref _microsoftId, value, nameof(Identity));
@@ -119,7 +118,7 @@ namespace AumauiCL.Models.User
         }
 
         // Organization
-        [Annotations.Required, Annotations.MaxLength(10)]
+        [Annotations.Required, Annotations.MaxLength(6)]
         public string CompanyCode
         {
             get => _companyCode;
@@ -326,8 +325,7 @@ namespace AumauiCL.Models.User
 
         public bool IsValid()
         {
-            return !string.IsNullOrEmpty(MicrosoftId) &&
-                   !string.IsNullOrEmpty(ExternalId) &&
+            return !string.IsNullOrEmpty(ExternalId) &&
                    !string.IsNullOrEmpty(UserName) &&
                    !string.IsNullOrEmpty(Email) &&
                    !string.IsNullOrEmpty(Name);
