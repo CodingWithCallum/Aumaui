@@ -2,7 +2,7 @@ using System.Diagnostics;
 using AumauiCL.Interfaces;
 using AumauiCL.Models.Api;
 using AumauiCL.Models.User;
-using Microsoft.Identity.Client;
+using AumauiCL.Services.Authentication;
 
 namespace AumauiCL.Services.Auth
 {
@@ -12,23 +12,28 @@ namespace AumauiCL.Services.Auth
         private readonly ISyncService _syncService;
         private readonly IApiService _apiService;
         private readonly ISecureStorageService _secureStorage;
-
-        // MSAL Configuration
-        private const string ClientId = "YOUR_CLIENT_ID_HERE"; // Placeholder
-        private const string RedirectUri = "msauth://com.companyname.aumaui"; // Placeholder
-        private string[] Scopes = new string[] { "User.Read" };
+        private readonly HostAuthenticationStateProvider _authStateProvider;
+        private readonly IMsalService _msalService;
 
         // Storage keys
         private const string AccessTokenKey = "access_token";
         private const string RefreshTokenKey = "refresh_token";
         private const string CompanyCodeKey = "company_code";
 
-        public AuthService(IDatabaseService databaseService, ISyncService syncService, IApiService apiService, ISecureStorageService secureStorage)
+        public AuthService(
+            IDatabaseService databaseService,
+            ISyncService syncService,
+            IApiService apiService,
+            ISecureStorageService secureStorage,
+            HostAuthenticationStateProvider authStateProvider,
+            IMsalService msalService)
         {
             _databaseService = databaseService;
             _syncService = syncService;
             _apiService = apiService;
             _secureStorage = secureStorage;
+            _authStateProvider = authStateProvider;
+            _msalService = msalService;
         }
 
         public async Task<UserModel?> GetCurrentUserAsync()
@@ -41,26 +46,20 @@ namespace AumauiCL.Services.Auth
         {
             try
             {
-                // Use "common" authority for multi-tenant — backend validates tenant membership via Code
-                var authority = "https://login.microsoftonline.com/common";
+                // MSAL interactive login — handled by the singleton (token caching, silent re-auth)
+                var msalResult = await _msalService.SignInInteractiveAsync();
 
-                var pca = PublicClientApplicationBuilder
-                    .Create(ClientId)
-                    .WithAuthority(authority)
-                    .WithRedirectUri(RedirectUri)
-#if ANDROID
-                    .WithParentActivityOrWindow(() => Platform.CurrentActivity)
-#endif
-                    .Build();
-
-                var msalResult = await pca.AcquireTokenInteractive(Scopes)
-                                          .ExecuteAsync();
-
-                // Call backend — tenant resolution happens server-side via Code
-                var apiRequest = new APIRequest
+                // Call backend with full BodyData as expected by the API
+                var apiRequest = new APIRequest<MicrosoftLoginRequest>
                 {
                     Code = companyCode,
-                    ProviderKey = msalResult.UniqueId
+                    BodyData = new MicrosoftLoginRequest
+                    {
+                        MicrosoftUserId = msalResult.MicrosoftUserId,
+                        Email = msalResult.Email,
+                        DisplayName = msalResult.DisplayName,
+                        AccessToken = msalResult.AccessToken
+                    }
                 };
 
                 var apiResponse = await _apiService.MicrosoftLoginAsync(apiRequest);
@@ -71,15 +70,16 @@ namespace AumauiCL.Services.Auth
                     throw new Exception(msg);
                 }
 
+                // Populate UserModel from API response data
                 var user = new UserModel
                 {
-                    Email = msalResult.Account.Username,
-                    Name = msalResult.Account.Username,
-                    MicrosoftId = msalResult.UniqueId,
+                    Email = apiResponse.ResponseData.User?.Email ?? msalResult.Email,
+                    Name = apiResponse.ResponseData.User?.Name ?? msalResult.DisplayName,
+                    MicrosoftId = msalResult.MicrosoftUserId,
                     CompanyCode = companyCode,
-                    Company = "Derived from API",
-                    ExternalId = apiResponse.ResponseData.AccessToken ?? Guid.NewGuid().ToString(),
-                    UserName = msalResult.Account.Username
+                    Company = apiResponse.ResponseData.User?.Company ?? string.Empty,
+                    ExternalId = apiResponse.ResponseData.User?.UserID ?? Guid.NewGuid().ToString(),
+                    UserName = msalResult.Email
                 };
 
                 // Store tenant context + tokens
@@ -91,6 +91,9 @@ namespace AumauiCL.Services.Auth
 
                 await _databaseService.SaveItemAsync(user);
                 await _syncService.SyncModuleAsync<UserModel>("users");
+
+                // Mark user as authenticated in Blazor auth state
+                _authStateProvider.MarkUserAsAuthenticated(user.Email);
 
                 return user;
             }
@@ -133,15 +136,16 @@ namespace AumauiCL.Services.Auth
                     throw new Exception(msg);
                 }
 
+                // Populate UserModel from API response data
                 var user = new UserModel
                 {
-                    Email = email,
-                    Name = email.Split('@')[0],
+                    Email = apiResponse.ResponseData.User?.Email ?? email,
+                    Name = apiResponse.ResponseData.User?.Name ?? email.Split('@')[0],
                     CompanyCode = companyCode,
-                    Company = "From API",
+                    Company = apiResponse.ResponseData.User?.Company ?? string.Empty,
                     MicrosoftId = "N/A",
-                    ExternalId = apiResponse.ResponseData.AccessToken ?? Guid.NewGuid().ToString(),
-                    UserName = email
+                    ExternalId = apiResponse.ResponseData.User?.UserID ?? Guid.NewGuid().ToString(),
+                    UserName = apiResponse.ResponseData.User?.Email ?? email
                 };
 
                 // Store tenant context + tokens
@@ -153,6 +157,9 @@ namespace AumauiCL.Services.Auth
 
                 await _databaseService.SaveItemAsync(user);
                 await _syncService.SyncModuleAsync<UserModel>("users");
+
+                // Mark user as authenticated in Blazor auth state
+                _authStateProvider.MarkUserAsAuthenticated(user.Email);
 
                 return user;
             }
@@ -171,10 +178,58 @@ namespace AumauiCL.Services.Auth
                 await _databaseService.DeleteItemAsync(user);
             }
 
+            // Clear MSAL cached accounts
+            await _msalService.SignOutAsync();
+
             // Clear all stored context
             _secureStorage.Remove(AccessTokenKey);
             _secureStorage.Remove(RefreshTokenKey);
             _secureStorage.Remove(CompanyCodeKey);
+
+            // Mark user as logged out in Blazor auth state
+            _authStateProvider.MarkUserAsLoggedOut();
+        }
+
+        public async Task<bool> TryRefreshTokenAsync()
+        {
+            try
+            {
+                var refreshToken = await _secureStorage.GetAsync(RefreshTokenKey);
+                var companyCode = await _secureStorage.GetAsync(CompanyCodeKey);
+
+                if (string.IsNullOrEmpty(refreshToken) || string.IsNullOrEmpty(companyCode))
+                    return false;
+
+                var request = new APIRequest
+                {
+                    Code = companyCode,
+                    Header = refreshToken
+                };
+
+                var apiResponse = await _apiService.RefreshTokenAsync(request);
+
+                if (!apiResponse.IsSuccessful || apiResponse.ResponseData == null || !apiResponse.ResponseData.Success)
+                    return false;
+
+                // Swap tokens in secure storage
+                if (!string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
+                    await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
+                if (!string.IsNullOrEmpty(apiResponse.ResponseData.RefreshToken))
+                    await _secureStorage.SetAsync(RefreshTokenKey, apiResponse.ResponseData.RefreshToken);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Token refresh failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> IsAuthenticatedAsync()
+        {
+            var token = await _secureStorage.GetAsync(AccessTokenKey);
+            return !string.IsNullOrEmpty(token);
         }
     }
 }

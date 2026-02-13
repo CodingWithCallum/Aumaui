@@ -9,18 +9,16 @@ namespace AumauiCL.Services.Api;
 public class ApiService : IApiService
 {
     private readonly HttpClient _http;
-    private readonly ISecureStorageService _secureStorage;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public ApiService(HttpClient httpClient, ISecureStorageService secureStorage)
+    public ApiService(HttpClient httpClient)
     {
         _http = httpClient;
-        _secureStorage = secureStorage;
-        _http.BaseAddress ??= new Uri(ApiConfig.BaseUrl);
+        // BaseAddress is now set via DI in MauiProgram.cs
     }
 
     // ─── Generic HTTP Helper ───────────────────────────────────────────
@@ -33,18 +31,27 @@ public class ApiService : IApiService
             "application/json"
         );
 
-        // Attach Bearer token if available
-        var token = await _secureStorage.GetAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-        {
-            _http.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
-        }
+        // Token is now attached automatically by AuthHeaderHandler in the HTTP pipeline
 
         var response = await _http.PostAsync(endpoint, jsonContent);
-        response.EnsureSuccessStatusCode();
-
         var content = await response.Content.ReadAsStringAsync();
+
+        // Try to deserialize regardless of status code
+        // so API-level errors in the response body are surfaced properly
+        if (!response.IsSuccessStatusCode)
+        {
+            // Attempt to deserialize as TRes (e.g. APIResponse) for error details
+            try
+            {
+                var errorResult = JsonSerializer.Deserialize<TRes>(content, JsonOptions);
+                if (errorResult != null) return errorResult;
+            }
+            catch { /* Fall through to generic error */ }
+
+            throw new HttpRequestException(
+                $"API request to {endpoint} failed with status {response.StatusCode}: {content}");
+        }
+
         return JsonSerializer.Deserialize<TRes>(content, JsonOptions)
             ?? throw new InvalidOperationException($"Failed to deserialize response from {endpoint}");
     }
@@ -57,9 +64,9 @@ public class ApiService : IApiService
             "/Authentication/XsysLogin", request);
     }
 
-    public async Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest request)
+    public async Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest<MicrosoftLoginRequest> request)
     {
-        return await PostAsync<APIRequest, APIResponse<LoginResponse>>(
+        return await PostAsync<APIRequest<MicrosoftLoginRequest>, APIResponse<LoginResponse>>(
             "/Authentication/MicrosoftLogin", request);
     }
 
@@ -73,13 +80,7 @@ public class ApiService : IApiService
 
     public async Task<List<T>> GetItemsAsync<T>(string endpoint)
     {
-        // Attach Bearer token if available
-        var token = await _secureStorage.GetAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-        {
-            _http.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
-        }
+        // Token is now attached automatically by AuthHeaderHandler in the HTTP pipeline
 
         var response = await _http.GetAsync(endpoint);
         response.EnsureSuccessStatusCode();

@@ -13,6 +13,6 @@ public interface IApiService
 
     // Authentication endpoints
     Task<APIResponse<LoginResponse>> XsysLoginAsync(APIRequest<LoginRequest> request);
-    Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest request);
+    Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest<MicrosoftLoginRequest> request);
     Task<APIResponse<LoginResponse>> RefreshTokenAsync(APIRequest request);
 }

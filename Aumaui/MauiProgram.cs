@@ -25,13 +25,20 @@ namespace Aumaui
             // Register Blazor Hybrid & Developer Tools
             builder.Services.AddMauiBlazorWebView();
 
-            // HTTP Client
-            builder.Services.AddHttpClient();
+            // HTTP Client with auth handler pipeline
+            builder.Services.AddTransient<AumauiCL.Services.Api.AuthHeaderHandler>();
+            builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+            {
+                client.BaseAddress = new Uri(AumauiCL.Services.Api.ApiConfig.BaseUrl);
+            }).AddHttpMessageHandler<AumauiCL.Services.Api.AuthHeaderHandler>();
 
             // Services
             builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
-            builder.Services.AddSingleton<IApiService, ApiService>();
             builder.Services.AddSingleton<ISecureStorageService, AumauiCL.Services.Storage.SecureStorageService>();
+            builder.Services.AddSingleton<AumauiCL.Services.Authentication.HostAuthenticationStateProvider>();
+            builder.Services.AddSingleton<AuthenticationStateProvider>(sp =>
+                sp.GetRequiredService<AumauiCL.Services.Authentication.HostAuthenticationStateProvider>());
+            builder.Services.AddSingleton<IMsalService, AumauiCL.Services.Auth.MsalService>();
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<ISyncService, SyncService>();
 
