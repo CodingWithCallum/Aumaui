@@ -61,19 +61,19 @@ public class ApiService : IApiService
     public async Task<APIResponse<LoginResponse>> SHEQsysLoginAsync(APIRequest<LoginRequest> request)
     {
         return await PostAsync<APIRequest<LoginRequest>, APIResponse<LoginResponse>>(
-            "/Authentication/SHEQsysLogin", request);
+            "/api/Authentication/SHEQsysLogin", request);
     }
 
     public async Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest<MicrosoftLoginRequest> request)
     {
         return await PostAsync<APIRequest<MicrosoftLoginRequest>, APIResponse<LoginResponse>>(
-            "/Authentication/MicrosoftLogin", request);
+            "/api/Authentication/MicrosoftLogin", request);
     }
 
     public async Task<APIResponse<LoginResponse>> RefreshTokenAsync(APIRequest request)
     {
         return await PostAsync<APIRequest, APIResponse<LoginResponse>>(
-            "/Authentication/SHEQsysRefreshCurrentToken", request);
+            "/api/Authentication/SHEQsysRefreshCurrentToken", request);
     }
 
     // ─── Generic Data Operations ───────────────────────────────────────
