@@ -18,6 +18,8 @@ namespace AumauiCL.Models.System
             set => SetField(ref _id, value);
         }
 
+        public string? ExternalId { get; set; }
+
         public string ModuleName
         {
             get => _moduleName;

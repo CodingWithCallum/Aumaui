@@ -3,10 +3,11 @@ using Annotation = System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User.Core
 {
-    public class UserRole
+    public class UserRole : AumauiCL.Interfaces.IEntity
     {
         [PrimaryKey, AutoIncrement]
         public int ID { get; set; }
+        public string? ExternalId { get; set; }
 
         [Annotation.Required]
         public int UserID { get; set; }

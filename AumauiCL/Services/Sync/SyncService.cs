@@ -16,8 +16,8 @@ namespace AumauiCL.Services.Sync
 
     public class SyncService : ISyncService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly MockApiService _apiService;
+        private readonly IDatabaseService _databaseService;
+        private readonly IApiService _apiService;
 
         private double _syncProgress;
         private string _syncStatus = "Ready";
@@ -51,7 +51,7 @@ namespace AumauiCL.Services.Sync
             }
         }
 
-        public SyncService(DatabaseService databaseService, MockApiService apiService)
+        public SyncService(IDatabaseService databaseService, IApiService apiService)
         {
             _databaseService = databaseService;
             _apiService = apiService;
@@ -117,9 +117,9 @@ namespace AumauiCL.Services.Sync
                     var uploadedItem = await _apiService.PushItemAsync(endpointName, item);
 
                     // Mark as synced
-                    item.SyncState.IsSynced = true;
-                    item.SyncState.WasFailed = false;
-                    item.SyncState.FailReason = string.Empty;
+                    item.IsSynced = true;
+                    item.WasFailed = false;
+                    item.FailReason = string.Empty;
 
                     // Save local state
                     await _databaseService.SaveItemAsync(item);
@@ -127,8 +127,8 @@ namespace AumauiCL.Services.Sync
                 }
                 catch (Exception ex)
                 {
-                    item.SyncState.WasFailed = true;
-                    item.SyncState.FailReason = ex.Message;
+                    item.WasFailed = true;
+                    item.FailReason = ex.Message;
                     await _databaseService.SaveItemAsync(item);
                 }
             }
@@ -146,13 +146,13 @@ namespace AumauiCL.Services.Sync
                     // Conflict resolution: Server Wins for now
                     // Copy properties from serverItem to localItem
                     // For simplicity in this mock, we just overwrite (upsert)
-                    serverItem.SyncState.IsSynced = true;
+                    serverItem.IsSynced = true;
                     await _databaseService.SaveItemAsync(serverItem);
                 }
                 else
                 {
                     // New item
-                    serverItem.SyncState.IsSynced = true;
+                    serverItem.IsSynced = true;
                     await _databaseService.SaveItemAsync(serverItem);
                 }
             }

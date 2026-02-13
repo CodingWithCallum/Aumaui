@@ -19,7 +19,7 @@ namespace AumauiCL.Models.JobCards
         private int _teamID;
 
         // Cache
-        private SyncState? _syncState;
+
         private OrganizationContext? _context;
         private JobCardConfiguration? _configuration;
 
@@ -29,6 +29,8 @@ namespace AumauiCL.Models.JobCards
             get => _id;
             set => SetField(ref _id, value);
         }
+
+        public string? ExternalId { get; set; }
 
         public string JobNumber
         {
@@ -78,8 +80,7 @@ namespace AumauiCL.Models.JobCards
             set => SetField(ref _teamID, value, nameof(OrganizationContext));
         }
 
-        [Ignore]
-        public SyncState SyncState => _syncState ??= new SyncState();
+
 
         [Ignore]
         public OrganizationContext Context => _context ??= new OrganizationContext

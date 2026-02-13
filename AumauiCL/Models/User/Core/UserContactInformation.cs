@@ -3,21 +3,21 @@ using Annotation = System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User.Core
 {
-    public class UserContactInformation
+    public record UserContactInformation
     {
         [Annotation.Required, Annotation.EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
 
         // Single phone list instead of separate properties
         [Ignore]
-        public List<PhoneNumber> PhoneNumbers { get; set; } = new();
+        public List<PhoneNumber> PhoneNumbers { get; init; } = new();
 
         // For backward compatibility and SQLite storage
         [Obsolete("Use PhoneNumbers collection instead")]
-        public string Telephone { get; set; } = string.Empty;
+        public string Telephone { get; init; } = string.Empty;
 
         [Obsolete("Use PhoneNumbers collection instead")]
-        public string MobileNumber { get; set; } = string.Empty;
+        public string MobileNumber { get; init; } = string.Empty;
 
         // ADD: Helper methods
         [Ignore]

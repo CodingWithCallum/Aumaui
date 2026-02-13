@@ -3,7 +3,7 @@ using SQLite;
 
 namespace AumauiCL.Services.Data
 {
-    public class DatabaseService
+    public class DatabaseService : IDatabaseService
     {
         private SQLiteAsyncConnection? _database;
         private readonly string _dbPath;
@@ -14,7 +14,7 @@ namespace AumauiCL.Services.Data
             _dbPath = Path.Combine(FileSystem.AppDataDirectory, dbName);
         }
 
-        private async Task InitAsync()
+        public async Task InitAsync()
         {
             if (_database is not null)
                 return;
@@ -30,21 +30,26 @@ namespace AumauiCL.Services.Data
             await _database.CreateTableAsync<Models.JobCards.JobCardAggregate>();
             await _database.CreateTableAsync<Models.RiskAssessments.RiskAssessmentAggregate>();
             await _database.CreateTableAsync<Models.Attachments.Attachment>();
+            _ = await _database.CreateTableAsync<Models.User.Core.UserRole>();
+            _ = await _database.CreateTableAsync<Models.User.Extended.UserAudit>();
+            _ = await _database.CreateTableAsync<Models.User.Extended.UserPreferences>();
+
+            // Legacy / Other - Removed
         }
 
-        public async Task<List<T>> GetItemsAsync<T>() where T : new()
+        public async Task<List<T>> GetItemsAsync<T>() where T : class, IEntity, new()
         {
             await InitAsync();
             return await _database!.Table<T>().ToListAsync();
         }
 
-        public async Task<T> GetItemAsync<T>(int id) where T : new()
+        public async Task<T?> GetItemAsync<T>(int id) where T : class, IEntity, new()
         {
             await InitAsync();
             return await _database!.FindWithQueryAsync<T>($"SELECT * FROM {typeof(T).Name} WHERE ID = ?", id);
         }
 
-        public async Task<int> SaveItemAsync<T>(T item) where T : new()
+        public async Task<int> SaveItemAsync<T>(T item) where T : class, IEntity, new()
         {
             await InitAsync();
             var entity = item as IEntity;
@@ -60,23 +65,22 @@ namespace AumauiCL.Services.Data
             }
         }
 
-        public async Task<int> DeleteItemAsync<T>(T item) where T : new()
+        public async Task<int> DeleteItemAsync<T>(T item) where T : class, IEntity, new()
         {
             await InitAsync();
             return await _database!.DeleteAsync(item);
         }
 
         // Specific query for getting unsynced items
-        public async Task<List<T>> GetUnsyncedItemsAsync<T>() where T : new()
+        public async Task<List<T>> GetUnsyncedItemsAsync<T>() where T : class, IEntity, ISyncable, new()
         {
             await InitAsync();
-            // This requires the generic T to have a visible SyncState property in the query
+            // This requires the generic T to have visible IsSynced properties in the query
             // SQLite-net-pcl isn't great at deep property queries on complex objects serialized as JSON
-            // For now, we will fetch all and filter in memory, or strictly rely on a flat 'IsSynced' column if we added one.
-            // Current design has SyncState as a property.
+            // We now have flat 'IsSynced' column.
 
             var allItems = await _database!.Table<T>().ToListAsync();
-            var syncableItems = allItems.OfType<ISyncable>().Where(x => !x.SyncState.IsSynced).Cast<T>().ToList();
+            var syncableItems = allItems.OfType<ISyncable>().Where(x => !x.IsSynced).Cast<T>().ToList();
             return syncableItems;
         }
     }

@@ -18,7 +18,7 @@ namespace AumauiCL.Models.Checklists
         private int _teamID;
 
         // Cache
-        private SyncState? _syncState;
+
         private OrganizationContext? _context;
         private ChecklistTemplate? _template;
 
@@ -28,6 +28,8 @@ namespace AumauiCL.Models.Checklists
             get => _id;
             set => SetField(ref _id, value);
         }
+
+        public string? ExternalId { get; set; }
 
         public string Name
         {
@@ -71,8 +73,7 @@ namespace AumauiCL.Models.Checklists
             set => SetField(ref _teamID, value, nameof(OrganizationContext));
         }
 
-        [Ignore]
-        public SyncState SyncState => _syncState ??= new SyncState();
+
 
         [Ignore]
         public OrganizationContext Context => _context ??= new OrganizationContext

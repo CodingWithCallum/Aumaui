@@ -3,22 +3,22 @@ using Annotation = System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User.Core
 {
-    public class UserOrganization
+    public record UserOrganization
     {
         [Annotation.Required, Annotation.MaxLength(10)]
-        public string CompanyCode { get; set; } = string.Empty;
+        public string CompanyCode { get; init; } = string.Empty;
 
-        public int CompanyID { get; set; }
-        public string Company { get; set; } = string.Empty;
+        public int CompanyID { get; init; }
+        public string Company { get; init; } = string.Empty;
 
-        public int DivisionID { get; set; }
-        public string Division { get; set; } = string.Empty;
+        public int DivisionID { get; init; }
+        public string Division { get; init; } = string.Empty;
 
-        public int DepartmentID { get; set; }
-        public string Department { get; set; } = string.Empty;
+        public int DepartmentID { get; init; }
+        public string Department { get; init; } = string.Empty;
 
-        public int TeamID { get; set; }
-        public string Team { get; set; } = string.Empty;
+        public int TeamID { get; init; }
+        public string Team { get; init; } = string.Empty;
 
         // Hierarchy helpers
         [Ignore]

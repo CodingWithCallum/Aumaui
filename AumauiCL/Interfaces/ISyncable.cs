@@ -4,6 +4,8 @@ namespace AumauiCL.Interfaces
 {
     public interface ISyncable
     {
-        SyncState SyncState { get; }
+        bool IsSynced { get; set; }
+        bool WasFailed { get; set; }
+        string FailReason { get; set; }
     }
 }

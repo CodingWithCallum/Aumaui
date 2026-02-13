@@ -2,6 +2,8 @@ using AumauiCL.Interfaces;
 using AumauiCL.Models.Core;
 using SQLite;
 
+using Annotations = System.ComponentModel.DataAnnotations;
+
 namespace AumauiCL.Models.Incidents
 {
     public class IncidentAggregate : BaseAggregate, IEntity, ISyncable
@@ -19,7 +21,7 @@ namespace AumauiCL.Models.Incidents
         private int _teamID;
 
         // Cache
-        private SyncState? _syncState;
+
         private OrganizationContext? _context;
         private IncidentConfiguration? _configuration;
 
@@ -30,12 +32,16 @@ namespace AumauiCL.Models.Incidents
             set => SetField(ref _id, value);
         }
 
+        public string? ExternalId { get; set; }
+
+        [Annotations.Required, Annotations.MaxLength(100)]
         public string Title
         {
             get => _title;
             set => SetField(ref _title, value);
         }
 
+        [Annotations.MaxLength(500)]
         public string Description
         {
             get => _description;
@@ -78,8 +84,7 @@ namespace AumauiCL.Models.Incidents
             set => SetField(ref _teamID, value, nameof(OrganizationContext));
         }
 
-        [Ignore]
-        public SyncState SyncState => _syncState ??= new SyncState();
+
 
         [Ignore]
         public OrganizationContext Context => _context ??= new OrganizationContext

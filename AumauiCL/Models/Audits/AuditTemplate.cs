@@ -18,6 +18,8 @@ namespace AumauiCL.Models.Audits
             set => SetField(ref _id, value);
         }
 
+        public string? ExternalId { get; set; }
+
         public string Name
         {
             get => _name;

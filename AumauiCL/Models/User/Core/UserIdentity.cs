@@ -2,16 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User.Core
 {
-    public class UserIdentity
+    public record UserIdentity
     {
         [Required]
-        public string ExternalId { get; set; } = string.Empty;
+        public string ExternalId { get; init; } = string.Empty;
 
         [Required]
-        public string MicrosoftId { get; set; } = string.Empty;
+        public string MicrosoftId { get; init; } = string.Empty;
 
         [Required]
-        public string UserName { get; set; } = string.Empty;
+        public string UserName { get; init; } = string.Empty;
 
         // Identity validation
         public bool IsValid => !string.IsNullOrEmpty(ExternalId) &&

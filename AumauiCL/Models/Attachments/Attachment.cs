@@ -14,7 +14,7 @@ namespace AumauiCL.Models.Attachments
         private DateTime _createdDate;
 
         // Cache
-        private SyncState? _syncState;
+
         private AuditMetadata? _metadata;
 
         [PrimaryKey, AutoIncrement]
@@ -23,6 +23,8 @@ namespace AumauiCL.Models.Attachments
             get => _id;
             set => SetField(ref _id, value);
         }
+
+        public string? ExternalId { get; set; }
 
         public string FileName
         {
@@ -54,8 +56,7 @@ namespace AumauiCL.Models.Attachments
             set => SetField(ref _createdDate, value, nameof(Metadata));
         }
 
-        [Ignore]
-        public SyncState SyncState => _syncState ??= new SyncState();
+
 
         [Ignore]
         public AuditMetadata Metadata => _metadata ??= new AuditMetadata

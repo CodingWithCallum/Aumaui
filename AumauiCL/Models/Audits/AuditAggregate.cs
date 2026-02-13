@@ -2,6 +2,8 @@ using AumauiCL.Interfaces;
 using AumauiCL.Models.Core;
 using SQLite;
 
+using Annotations = System.ComponentModel.DataAnnotations;
+
 namespace AumauiCL.Models.Audits
 {
     public class AuditAggregate : BaseAggregate, IEntity, ISyncable
@@ -11,6 +13,7 @@ namespace AumauiCL.Models.Audits
         private string _reference = string.Empty;
         private DateTime _scheduledDate;
         private DateTime? _completedDate;
+        private DateTime _createdDate = DateTime.UtcNow;
 
         // Context Fields (for OrganizationContext)
         private int _companyID;
@@ -19,7 +22,7 @@ namespace AumauiCL.Models.Audits
         private int _teamID;
 
         // Cache
-        private SyncState? _syncState;
+
         private OrganizationContext? _context;
         private AuditConfiguration? _configuration;
         private AuditStatus? _status;
@@ -35,6 +38,9 @@ namespace AumauiCL.Models.Audits
             set => SetField(ref _id, value);
         }
 
+        public string? ExternalId { get; set; }
+
+        [Annotations.Required, Annotations.MaxLength(50)]
         public string Reference
         {
             get => _reference;
@@ -51,6 +57,12 @@ namespace AumauiCL.Models.Audits
         {
             get => _completedDate;
             set => SetField(ref _completedDate, value);
+        }
+
+        public DateTime CreatedDate
+        {
+            get => _createdDate;
+            set => SetField(ref _createdDate, value);
         }
 
         // Organization Context Properties
@@ -79,8 +91,7 @@ namespace AumauiCL.Models.Audits
         }
 
         // Navigation / Value Objects
-        [Ignore]
-        public SyncState SyncState => _syncState ??= new SyncState();
+
 
         [Ignore]
         public OrganizationContext Context => _context ??= new OrganizationContext
@@ -103,7 +114,7 @@ namespace AumauiCL.Models.Audits
         [Ignore]
         public AuditMetadata Metadata => _metadata ??= new AuditMetadata
         {
-            CreatedDate = DateTime.UtcNow // Placeholder logic
+            CreatedDate = CreatedDate
         };
         #endregion
 

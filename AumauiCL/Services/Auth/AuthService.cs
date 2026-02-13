@@ -1,41 +1,39 @@
 using System.Diagnostics;
 using AumauiCL.Interfaces;
+using AumauiCL.Models.Api;
 using AumauiCL.Models.User;
-using AumauiCL.Services.Data;
-using AumauiCL.Services.Sync;
 using Microsoft.Identity.Client;
 
 namespace AumauiCL.Services.Auth
 {
     public class AuthService : IAuthService
     {
-        private readonly DatabaseService _databaseService;
+        private readonly IDatabaseService _databaseService;
         private readonly ISyncService _syncService;
-        private readonly HttpClient _httpClient;
+        private readonly IApiService _apiService;
 
         // MSAL Configuration
         private const string ClientId = "YOUR_CLIENT_ID_HERE"; // Placeholder
         private const string RedirectUri = "msauth://com.companyname.aumaui"; // Placeholder
         private string[] Scopes = new string[] { "User.Read" };
 
-        public AuthService(DatabaseService databaseService, ISyncService syncService, HttpClient httpClient)
+        public AuthService(IDatabaseService databaseService, ISyncService syncService, IApiService apiService)
         {
             _databaseService = databaseService;
             _syncService = syncService;
-            _httpClient = httpClient;
+            _apiService = apiService;
         }
 
         public async Task<UserModel?> GetCurrentUserAsync()
         {
-            // Simple check: get the first user in the DB. 
             var users = await _databaseService.GetItemsAsync<UserModel>();
             return users.FirstOrDefault();
         }
 
         public async Task<string> ResolveTenantAsync(string companyCode)
         {
-            // MOCK API Call
-            await Task.Delay(500); // Simulate network
+            // TODO: Replace with real tenant resolution API call when endpoint is available
+            await Task.Delay(100);
 
             return companyCode.ToLower() switch
             {
@@ -62,63 +60,81 @@ namespace AumauiCL.Services.Auth
 #endif
                     .Build();
 
-                var result = await pca.AcquireTokenInteractive(Scopes)
-                                      .ExecuteAsync();
+                var msalResult = await pca.AcquireTokenInteractive(Scopes)
+                                          .ExecuteAsync();
 
-                // Create User Model
-                var user = new UserModel
+                // Call backend to register/authenticate the Microsoft user
+                var apiRequest = new APIRequest
                 {
-                    Email = result.Account.Username,
-                    Name = result.Account.Username, // MSAL might give claims, simplified here
-                    MicrosoftId = result.UniqueId, // Store Unique ID
-                    CompanyCode = companyCode,
-                    Company = "Derived from Tenant", // Placeholder
-                    // Initialize other required fields to defaults
-                    ExternalId = Guid.NewGuid().ToString(),
-                    UserName = result.Account.Username
+                    Code = companyCode,
+                    ProviderKey = msalResult.UniqueId
                 };
 
-                // Save to local DB
-                await _databaseService.SaveItemAsync(user);
+                var apiResponse = await _apiService.MicrosoftLoginAsync(apiRequest);
 
-                // TRIGGER SYNC - PULL USER PROFILE
+                if (!apiResponse.IsSuccessful || apiResponse.ResponseData == null || !apiResponse.ResponseData.Success)
+                {
+                    var msg = apiResponse.ResponseData?.Message ?? apiResponse.ResponseMessage ?? "Microsoft login failed";
+                    throw new Exception(msg);
+                }
+
+                // Build user from API response
+                var user = new UserModel
+                {
+                    Email = msalResult.Account.Username,
+                    Name = msalResult.Account.Username,
+                    MicrosoftId = msalResult.UniqueId,
+                    CompanyCode = companyCode,
+                    Company = "Derived from API",
+                    ExternalId = apiResponse.ResponseData.AccessToken ?? Guid.NewGuid().ToString(),
+                    UserName = msalResult.Account.Username
+                };
+
+                // TODO: Store tokens securely
+                // SecureStorage.SetAsync("access_token", apiResponse.ResponseData.AccessToken);
+                // SecureStorage.SetAsync("refresh_token", apiResponse.ResponseData.RefreshToken);
+
+                await _databaseService.SaveItemAsync(user);
                 await _syncService.SyncModuleAsync<UserModel>("users");
 
                 return user;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"MSAL Login Failed: {ex.Message}");
+                Debug.WriteLine($"Microsoft Login Failed: {ex.Message}");
                 throw;
             }
         }
 
         public async Task<UserModel> LoginWithStandardAsync(string companyCode, string email, string password)
         {
-            // Prepare the login request payload
-            var loginRequest = new
-            {
-                CompanyCode = companyCode,
-                Email = email,
-                Password = password
-            };
-
             try
             {
-                // TODO: Replace with actual API endpoint when available
-                // var response = await _httpClient.PostAsJsonAsync("https://api.aumaui.com/auth/login", loginRequest);
-                // response.EnsureSuccessStatusCode();
-                // var result = await response.Content.ReadFromJsonAsync<LoginResult>();
-
-                // SIMULATE A SUCCESSFUL API CALL
-                await Task.Delay(1000); // Simulate network latency
-
-                // Mock validation (server-side simulation)
-                // In a real scenario, the API would return 401 if credentials were invalid.
-                // For now, we allow any non-empty input to succeed unless specific "error" triggers are used for testing.
-                if (email.ToLower().Contains("error"))
+                var loginRequest = new APIRequest<LoginRequest>
                 {
-                    throw new HttpRequestException("Invalid credentials (simulated API error)", null, System.Net.HttpStatusCode.Unauthorized);
+                    Code = companyCode,
+                    BodyData = new LoginRequest
+                    {
+                        Email = email,
+                        Password = password
+                    }
+                };
+
+                var apiResponse = await _apiService.XsysLoginAsync(loginRequest);
+
+                if (!apiResponse.IsSuccessful || apiResponse.ResponseData == null || !apiResponse.ResponseData.Success)
+                {
+                    var msg = apiResponse.ResponseData?.Message ?? apiResponse.ResponseMessage ?? "Login failed";
+
+                    // Surface validation errors if present
+                    if (apiResponse.ResponseValidation?.Count > 0)
+                    {
+                        var validationMessages = string.Join("; ",
+                            apiResponse.ResponseValidation.Select(v => v.ValidationMessage));
+                        msg = $"{msg}: {validationMessages}";
+                    }
+
+                    throw new Exception(msg);
                 }
 
                 var user = new UserModel
@@ -126,16 +142,17 @@ namespace AumauiCL.Services.Auth
                     Email = email,
                     Name = email.Split('@')[0],
                     CompanyCode = companyCode,
-                    Company = "Standard Co.", // This would come from the API response
-                    // Required fields
+                    Company = "From API",
                     MicrosoftId = "N/A",
-                    ExternalId = Guid.NewGuid().ToString(), // This would come from the API response
+                    ExternalId = apiResponse.ResponseData.AccessToken ?? Guid.NewGuid().ToString(),
                     UserName = email
                 };
 
-                await _databaseService.SaveItemAsync(user);
+                // TODO: Store tokens securely
+                // SecureStorage.SetAsync("access_token", apiResponse.ResponseData.AccessToken);
+                // SecureStorage.SetAsync("refresh_token", apiResponse.ResponseData.RefreshToken);
 
-                // TRIGGER SYNC - PULL USER PROFILE
+                await _databaseService.SaveItemAsync(user);
                 await _syncService.SyncModuleAsync<UserModel>("users");
 
                 return user;
@@ -149,12 +166,15 @@ namespace AumauiCL.Services.Auth
 
         public async Task LogoutAsync()
         {
-            // For now, just delete the local user record to "logout"
             var users = await _databaseService.GetItemsAsync<UserModel>();
             foreach (var user in users)
             {
                 await _databaseService.DeleteItemAsync(user);
             }
+
+            // TODO: Clear stored tokens
+            // SecureStorage.Remove("access_token");
+            // SecureStorage.Remove("refresh_token");
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Components.Authorization;
 
-namespace MyMauiApp.Services.Auth;
+namespace AumauiCL.Services.Authentication;
 
 // Primary Constructor (C# 14 style)
 // This class provides a custom authentication state provider for Blazor applications.

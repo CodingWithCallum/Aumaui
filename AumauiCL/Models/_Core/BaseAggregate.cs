@@ -1,10 +1,33 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using AumauiCL.Interfaces;
 
 namespace AumauiCL.Models.Core
 {
-    public abstract class BaseAggregate : INotifyPropertyChanged
+    public abstract class BaseAggregate : INotifyPropertyChanged, ISyncable
     {
+        private bool _isSynced;
+        private bool _wasFailed;
+        private string _failReason = string.Empty;
+
+        public bool IsSynced
+        {
+            get => _isSynced;
+            set => SetField(ref _isSynced, value);
+        }
+
+        public bool WasFailed
+        {
+            get => _wasFailed;
+            set => SetField(ref _wasFailed, value);
+        }
+
+        public string FailReason
+        {
+            get => _failReason;
+            set => SetField(ref _failReason, value);
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

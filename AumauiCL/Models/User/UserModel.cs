@@ -15,7 +15,7 @@ namespace AumauiCL.Models.User
         #region Private Fields
         private int _id; // Backing field for ID
         private string _microsoftId = string.Empty;
-        private string _externalId = string.Empty;
+        private string? _externalId;
         private string _userName = string.Empty;
         private string _title = string.Empty;
         private string _name = string.Empty;
@@ -34,7 +34,7 @@ namespace AumauiCL.Models.User
         private string _roles = string.Empty;
 
         // Cached computed properties
-        private SyncState? _syncState;
+
         private UserIdentity? _identity;
         private UserContactInformation? _contactInfo;
         private UserOrganization? _organization;
@@ -60,7 +60,7 @@ namespace AumauiCL.Models.User
 
         [Unique]
         [Annotations.Required, Annotations.MaxLength(50)]
-        public string ExternalId
+        public string? ExternalId
         {
             get => _externalId;
             set => SetField(ref _externalId, value, nameof(Identity));
@@ -195,8 +195,7 @@ namespace AumauiCL.Models.User
         }
 
         // Navigation Properties
-        [Ignore]
-        public SyncState SyncState => _syncState ??= new SyncState();
+
 
         [Ignore]
         public List<UserRole> UserRoles { get; set; } = new();
@@ -215,8 +214,11 @@ namespace AumauiCL.Models.User
             _contactInfo ??= new UserContactInformation
             {
                 Email = Email,
-                Telephone = Telephone,
-                MobileNumber = MobileNumber
+                PhoneNumbers = new List<PhoneNumber>
+                {
+                    new(Telephone, PhoneType.Work, true),
+                    new(MobileNumber, PhoneType.Mobile)
+                }
             };
 
         [Ignore]

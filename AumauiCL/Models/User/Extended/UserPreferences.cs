@@ -3,10 +3,11 @@ using Annotation = System.ComponentModel.DataAnnotations;
 
 namespace AumauiCL.Models.User.Extended // FIX: Consistent casing
 {
-    public class UserPreferences
+    public class UserPreferences : AumauiCL.Interfaces.IEntity
     {
         [PrimaryKey, AutoIncrement]
         public int ID { get; set; }
+        public string? ExternalId { get; set; }
 
         [Annotation.Required, Indexed]
         public int UserID { get; set; }
