@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using AumauiCL.Interfaces;
@@ -9,17 +9,18 @@ namespace AumauiCL.Services.Api;
 public class ApiService : IApiService
 {
     private readonly HttpClient _http;
-    private const string BaseUrl = "https://localhost:7224/api";
+    private readonly ISecureStorageService _secureStorage;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public ApiService(HttpClient httpClient)
+    public ApiService(HttpClient httpClient, ISecureStorageService secureStorage)
     {
         _http = httpClient;
-        _http.BaseAddress ??= new Uri(BaseUrl);
+        _secureStorage = secureStorage;
+        _http.BaseAddress ??= new Uri(ApiConfig.BaseUrl);
     }
 
     // ─── Generic HTTP Helper ───────────────────────────────────────────
@@ -31,6 +32,14 @@ public class ApiService : IApiService
             Encoding.UTF8,
             "application/json"
         );
+
+        // Attach Bearer token if available
+        var token = await _secureStorage.GetAsync("access_token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
 
         var response = await _http.PostAsync(endpoint, jsonContent);
         response.EnsureSuccessStatusCode();
@@ -64,6 +73,14 @@ public class ApiService : IApiService
 
     public async Task<List<T>> GetItemsAsync<T>(string endpoint)
     {
+        // Attach Bearer token if available
+        var token = await _secureStorage.GetAsync("access_token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
+
         var response = await _http.GetAsync(endpoint);
         response.EnsureSuccessStatusCode();
 

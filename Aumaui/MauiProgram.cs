@@ -31,6 +31,7 @@ namespace Aumaui
             // Services
             builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
             builder.Services.AddSingleton<IApiService, ApiService>();
+            builder.Services.AddSingleton<ISecureStorageService, AumauiCL.Services.Storage.SecureStorageService>();
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<ISyncService, SyncService>();
 

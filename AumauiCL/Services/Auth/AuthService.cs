@@ -11,17 +11,24 @@ namespace AumauiCL.Services.Auth
         private readonly IDatabaseService _databaseService;
         private readonly ISyncService _syncService;
         private readonly IApiService _apiService;
+        private readonly ISecureStorageService _secureStorage;
 
         // MSAL Configuration
         private const string ClientId = "YOUR_CLIENT_ID_HERE"; // Placeholder
         private const string RedirectUri = "msauth://com.companyname.aumaui"; // Placeholder
         private string[] Scopes = new string[] { "User.Read" };
 
-        public AuthService(IDatabaseService databaseService, ISyncService syncService, IApiService apiService)
+        // Storage keys
+        private const string AccessTokenKey = "access_token";
+        private const string RefreshTokenKey = "refresh_token";
+        private const string CompanyCodeKey = "company_code";
+
+        public AuthService(IDatabaseService databaseService, ISyncService syncService, IApiService apiService, ISecureStorageService secureStorage)
         {
             _databaseService = databaseService;
             _syncService = syncService;
             _apiService = apiService;
+            _secureStorage = secureStorage;
         }
 
         public async Task<UserModel?> GetCurrentUserAsync()
@@ -30,26 +37,12 @@ namespace AumauiCL.Services.Auth
             return users.FirstOrDefault();
         }
 
-        public async Task<string> ResolveTenantAsync(string companyCode)
-        {
-            // TODO: Replace with real tenant resolution API call when endpoint is available
-            await Task.Delay(100);
-
-            return companyCode.ToLower() switch
-            {
-                "microsoft" => "common",
-                "contoso" => "contoso-tenant-guid",
-                "demo" => "demo-tenant-guid",
-                _ => throw new Exception("Invalid Company Code")
-            };
-        }
-
         public async Task<UserModel> LoginWithMicrosoftAsync(string companyCode)
         {
             try
             {
-                var tenantId = await ResolveTenantAsync(companyCode);
-                var authority = $"https://login.microsoftonline.com/{tenantId}";
+                // Use "common" authority for multi-tenant — backend validates tenant membership via Code
+                var authority = "https://login.microsoftonline.com/common";
 
                 var pca = PublicClientApplicationBuilder
                     .Create(ClientId)
@@ -63,7 +56,7 @@ namespace AumauiCL.Services.Auth
                 var msalResult = await pca.AcquireTokenInteractive(Scopes)
                                           .ExecuteAsync();
 
-                // Call backend to register/authenticate the Microsoft user
+                // Call backend — tenant resolution happens server-side via Code
                 var apiRequest = new APIRequest
                 {
                     Code = companyCode,
@@ -78,7 +71,6 @@ namespace AumauiCL.Services.Auth
                     throw new Exception(msg);
                 }
 
-                // Build user from API response
                 var user = new UserModel
                 {
                     Email = msalResult.Account.Username,
@@ -90,9 +82,12 @@ namespace AumauiCL.Services.Auth
                     UserName = msalResult.Account.Username
                 };
 
-                // TODO: Store tokens securely
-                // SecureStorage.SetAsync("access_token", apiResponse.ResponseData.AccessToken);
-                // SecureStorage.SetAsync("refresh_token", apiResponse.ResponseData.RefreshToken);
+                // Store tenant context + tokens
+                await _secureStorage.SetAsync(CompanyCodeKey, companyCode);
+                if (!string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
+                    await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
+                if (!string.IsNullOrEmpty(apiResponse.ResponseData.RefreshToken))
+                    await _secureStorage.SetAsync(RefreshTokenKey, apiResponse.ResponseData.RefreshToken);
 
                 await _databaseService.SaveItemAsync(user);
                 await _syncService.SyncModuleAsync<UserModel>("users");
@@ -110,6 +105,7 @@ namespace AumauiCL.Services.Auth
         {
             try
             {
+                // Backend resolves tenant via Code field
                 var loginRequest = new APIRequest<LoginRequest>
                 {
                     Code = companyCode,
@@ -148,9 +144,12 @@ namespace AumauiCL.Services.Auth
                     UserName = email
                 };
 
-                // TODO: Store tokens securely
-                // SecureStorage.SetAsync("access_token", apiResponse.ResponseData.AccessToken);
-                // SecureStorage.SetAsync("refresh_token", apiResponse.ResponseData.RefreshToken);
+                // Store tenant context + tokens
+                await _secureStorage.SetAsync(CompanyCodeKey, companyCode);
+                if (!string.IsNullOrEmpty(apiResponse.ResponseData.AccessToken))
+                    await _secureStorage.SetAsync(AccessTokenKey, apiResponse.ResponseData.AccessToken);
+                if (!string.IsNullOrEmpty(apiResponse.ResponseData.RefreshToken))
+                    await _secureStorage.SetAsync(RefreshTokenKey, apiResponse.ResponseData.RefreshToken);
 
                 await _databaseService.SaveItemAsync(user);
                 await _syncService.SyncModuleAsync<UserModel>("users");
@@ -172,9 +171,10 @@ namespace AumauiCL.Services.Auth
                 await _databaseService.DeleteItemAsync(user);
             }
 
-            // TODO: Clear stored tokens
-            // SecureStorage.Remove("access_token");
-            // SecureStorage.Remove("refresh_token");
+            // Clear all stored context
+            _secureStorage.Remove(AccessTokenKey);
+            _secureStorage.Remove(RefreshTokenKey);
+            _secureStorage.Remove(CompanyCodeKey);
         }
     }
 }

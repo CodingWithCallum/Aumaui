@@ -22,11 +22,7 @@ namespace Aumaui
             Console.WriteLine("--- START AUTH VERIFICATION ---");
             try
             {
-                // 1. Tenant Resolution
-                var tenant = await _authService.ResolveTenantAsync("Contoso");
-                Console.WriteLine($"Resolved Tenant: {tenant}");
-
-                // 2. Standard Login
+                // 1. Standard Login (backend resolves tenant via Code)
                 var user = await _authService.LoginWithStandardAsync("Contoso", "test@test.com", "password");
                 Console.WriteLine($"Logged in user: {user.Email}");
 
