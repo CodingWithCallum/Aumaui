@@ -157,17 +157,17 @@ namespace AumauiCL.Services.Auth
                     throw new Exception("Login succeeded but no access token was returned. Please try again.");
                 }
 
-                // Populate UserModel from API response data
+                // Populate UserModel from API response data using the new properties
                 var user = new UserModel
                 {
                     Email = apiResponse.ResponseData.User?.Email ?? email,
                     Name = apiResponse.ResponseData.User?.Name ?? email.Split('@')[0],
-                    CompanyCode = companyCode,
+                    CompanyCode = apiResponse.ResponseData.User?.CompanyCode ?? companyCode,
                     Company = apiResponse.ResponseData.User?.Company ?? string.Empty,
                     MicrosoftId = null,
-                    ExternalId = apiResponse.ResponseData.User?.UserID
+                    ExternalId = apiResponse.ResponseData.User?.SHEQsysUserId
                         ?? throw new Exception("Login succeeded but the server did not return a User ID. Please contact support."),
-                    UserName = apiResponse.ResponseData.User?.Email ?? email
+                    UserName = apiResponse.ResponseData.User?.UserName ?? apiResponse.ResponseData.User?.Email ?? email
                 };
 
                 // Store tenant context + tokens
@@ -199,7 +199,6 @@ namespace AumauiCL.Services.Auth
                 throw;
             }
         }
-
         public async Task LogoutAsync()
         {
             var users = await _databaseService.GetItemsAsync<UserModel>();
