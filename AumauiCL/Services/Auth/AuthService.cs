@@ -119,7 +119,7 @@ namespace AumauiCL.Services.Auth
                     }
                 };
 
-                var apiResponse = await _apiService.XsysLoginAsync(loginRequest);
+                var apiResponse = await _apiService.SHEQsysLoginAsync(loginRequest);
 
                 if (!apiResponse.IsSuccessful || apiResponse.ResponseData == null || !apiResponse.ResponseData.Success)
                 {

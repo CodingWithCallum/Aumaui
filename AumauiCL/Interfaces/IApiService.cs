@@ -12,7 +12,7 @@ public interface IApiService
     Task<TRes> PostAsync<TReq, TRes>(string endpoint, TReq body);
 
     // Authentication endpoints
-    Task<APIResponse<LoginResponse>> XsysLoginAsync(APIRequest<LoginRequest> request);
+    Task<APIResponse<LoginResponse>> SHEQsysLoginAsync(APIRequest<LoginRequest> request);
     Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest<MicrosoftLoginRequest> request);
     Task<APIResponse<LoginResponse>> RefreshTokenAsync(APIRequest request);
 }

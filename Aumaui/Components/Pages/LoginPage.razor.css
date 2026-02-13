@@ -80,15 +80,15 @@
     width: 100%;
 }
 
-/* Xsys (Now Primary) */
-.btn-xsys {
+/* SHEQsys (Now Primary) */
+.btn-sheqsys {
     background-color: #0078d4 !important;
     /* Force Blue */
     color: white !important;
     box-shadow: 0 4px 6px rgba(0, 120, 212, 0.2);
 }
 
-.btn-xsys:hover {
+.btn-sheqsys:hover {
     background-color: #005a9e !important;
     /* Darker Blue */
     transform: translateY(-2px);

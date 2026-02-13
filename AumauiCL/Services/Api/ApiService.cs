@@ -58,10 +58,10 @@ public class ApiService : IApiService
 
     // ─── Authentication Endpoints ──────────────────────────────────────
 
-    public async Task<APIResponse<LoginResponse>> XsysLoginAsync(APIRequest<LoginRequest> request)
+    public async Task<APIResponse<LoginResponse>> SHEQsysLoginAsync(APIRequest<LoginRequest> request)
     {
         return await PostAsync<APIRequest<LoginRequest>, APIResponse<LoginResponse>>(
-            "/Authentication/XsysLogin", request);
+            "/Authentication/SHEQsysLogin", request);
     }
 
     public async Task<APIResponse<LoginResponse>> MicrosoftLoginAsync(APIRequest<MicrosoftLoginRequest> request)
@@ -73,7 +73,7 @@ public class ApiService : IApiService
     public async Task<APIResponse<LoginResponse>> RefreshTokenAsync(APIRequest request)
     {
         return await PostAsync<APIRequest, APIResponse<LoginResponse>>(
-            "/Authentication/XsysRefreshCurrentToken", request);
+            "/Authentication/SHEQsysRefreshCurrentToken", request);
     }
 
     // ─── Generic Data Operations ───────────────────────────────────────

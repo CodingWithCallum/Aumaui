@@ -20,10 +20,10 @@
         @if (_currentMode == LoginMode.Selection)
         {
             <div class="view-container">
-                <!-- Xsys Login (Primary Emphasis) -->
-                <button class="btn-login-option btn-xsys" @onclick="() => SwitchMode(LoginMode.Xsys)">
+                <!-- SHEQsys Login (Primary Emphasis) -->
+                <button class="btn-login-option btn-sheqsys" @onclick="() => SwitchMode(LoginMode.SHEQsys)">
                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4V12L17.5 15.25L16.5 16.75L10 13V4H12Z" fill="white"/></svg>
-                    Sign in with Xsys ID
+                    Sign in with SHEQsys ID
                 </button>
 
                 <!-- Microsoft Login (Secondary Emphasis) -->
@@ -33,7 +33,7 @@
                 </button>
             </div>
         }
-        else if (_currentMode == LoginMode.Xsys)
+        else if (_currentMode == LoginMode.SHEQsys)
         {
             <div class="view-container slide-in">
                 <button class="btn-back" @onclick="GoBack">
@@ -121,7 +121,7 @@
 </div>
 
 @code {
-    private enum LoginMode { Selection, Xsys, Microsoft }
+    private enum LoginMode { Selection, SHEQsys, Microsoft }
     private LoginMode _currentMode = LoginMode.Selection;
 
     private void SwitchMode(LoginMode mode)
