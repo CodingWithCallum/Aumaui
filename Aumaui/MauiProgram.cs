@@ -38,6 +38,7 @@ namespace Aumaui
             builder.Services.AddSingleton<AumauiCL.Services.Authentication.HostAuthenticationStateProvider>();
             builder.Services.AddSingleton<AuthenticationStateProvider>(sp =>
                 sp.GetRequiredService<AumauiCL.Services.Authentication.HostAuthenticationStateProvider>());
+            builder.Services.AddAuthorizationCore();
             builder.Services.AddSingleton<IMsalService, AumauiCL.Services.Auth.MsalService>();
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<ISyncService, SyncService>();
